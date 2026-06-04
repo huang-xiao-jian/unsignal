@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nfeat\\(playground\\): add Storybook and React dependencies\n\n- Add storybook with rsbuild renderer for component development\n- Add React and related dependencies\n- Add workspace references to @sisyphus/* packages\n- Add .storybook config and stories scaffolding\nEOF\n\\)\")",
+      "Bash(cat /Users/jerry/Development/sisyphus-spec/.git/lint-staged_unstaged.patch 2>/dev/null || echo \"No patch file found\")"
+    ]
+  }
+}
