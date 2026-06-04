@@ -2,7 +2,7 @@
 
 ## 业务目标
 
-提供类似于 `mobx-react-lite` 风格的 `@preact/signals-core` 响应式桥接能力
+提供类似于 [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite) 风格的 `@preact/signals-core` 响应式桥接能力
 
 ## 业务指标
 
