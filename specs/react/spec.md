@@ -2,7 +2,7 @@
 
 ## 业务目标
 
-提供类似于 `mobx-react-lite` 风格的 `@preact/signals-core` 连接层
+提供类似于 `mobx-react-lite` 风格的 `@preact/signals-core` 响应式桥接能力
 
 ## 业务指标
 
@@ -16,8 +16,7 @@
 
 ### 设计原则
 
-- 提供 `mobx-react-lite` 风格的显式响应式桥接能力
-- 功能与 `@preact/signals-react` 互补，不重复其已有 API（`useSignal` / `useComputed` / `useSignalEffect` / `useSignals`），不进行重导出
+- 功能与 `@preact/signals-react` 互补，不重复其已有 API（`useSignal` / `useComputed` / `useSignalEffect` / `useSignals`），API 不进行重导出
 
 ### API Reference
 
@@ -38,9 +37,9 @@ function observer<P extends object>(
 
 **行为说明：**
 
-- 基于 `useSyncExternalStore` 订阅 `@preact/signals-core` 的 `signal` 变化
 - 渲染阶段自动收集组件函数体内读取的 `signal` 依赖，追踪 `signal` 变化时触发组件重渲染
 - 自动管理所有 `signal` 订阅，必须支持 `React 19` 并发模式（`Concurrent Mode`）
+- 自动 `memoization` 用以提高性能
 
 **用法示例：**
 
@@ -70,8 +69,8 @@ const Observer: FunctionComponent<ObserverProps>;
 **行为说明：**
 
 - 内部复用 `observer` 的响应式追踪机制
-- `children` 为渲染函数，函数体内读取的 signal 变化时仅该片段重渲染
-- 适用于需要在非 `observer` 组件中局部使用 signal 的场景
+- `children` 为渲染函数，函数体内读取的 `signal` 变化时仅该片段重渲染
+- 适用于需要在非 `observer` 组件中局部使用 `signal` 的场景
 
 **用法示例：**
 
@@ -101,7 +100,6 @@ function useSignalValue<T>(signal: Signal<T>): T;
 
 **行为说明：**
 
-- 内部基于 `useSyncExternalStore` 订阅传入的单个 `signal` 变化
 - 支持 `ReadonlySignal`（包括 `computed` 返回值）
 
 **用法示例：**
@@ -136,11 +134,10 @@ function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 
 **行为说明：**
 
-- 读取：内部基于 `useSyncExternalStore` 订阅 `signal` 变化，返回 `signal.value`
-- 变更：外部通过 `Mutator` 函数修改 `signal.value`
+- 外部通过 `Mutator` 函数修改
 - 仅支持可写 `Signal`，不支持 `ReadonlySignal`（如 `computed` 返回值）
 - `immer` 为必选 `peerDependency`，`Mutator` 支持两种写法：
-  - `(draft: T) => void`：可变式，适用于对象 / 数组，内部通过 `produce` 生成不可变值
+  - `(draft: T) => void`：可变式，适用于对象 / 数组，内部自动生成不可变值
   - `(draft: T) => T`：返回新值，适用于原始类型（`number` / `string` / `boolean` 等）
 
 **用法示例：**
@@ -192,8 +189,8 @@ function TodoList() {
   return (
     <ul>
       {items.map((item) => (
-        <li key={item.id}>
-          {item.text} {item.done ? '✓' : ''}
+        <li key={item.id} onClick={() => onToggle(item.id)}>
+          {item.text} {item.done ? '⚡️' : '📦️'}
         </li>
       ))}
     </ul>
