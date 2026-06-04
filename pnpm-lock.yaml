@@ -53,6 +53,12 @@ importers:
       '@preact/signals-core':
         specifier: ^1.14.2
         version: 1.14.2
+      immer:
+        specifier: ^11.0.0
+        version: 11.1.8
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -843,6 +849,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  immer@11.1.8:
+    resolution: {integrity: sha512-/tbkHMW7y10Lx6i1crLjD4/OhNkRG+Fo7byZHtah0547nIeXYcpIXaUh0IAQY6gO5459qpGGYapcEOHtFXkIuA==}
+
   import-without-cache@0.4.0:
     resolution: {integrity: sha512-NkJQA7oZ4YHQhd2+H3BoRFKF3d/XNsiKpHZCQEMH9pDX27hQQLsTyOocyRgaIVtf8gHX3Nt3LPkR4e5EdtPAGQ==}
     engines: {node: ^22.18.0 || >=24.0.0}
@@ -961,6 +970,10 @@ packages:
 
   quansync@1.0.0:
     resolution: {integrity: sha512-5xZacEEufv3HSTPQuchrvV6soaiACMFnq1H8wkVioctoH3TRha9Sz66lOxRwPK/qZj7HPiSveih9yAyh98gvqA==}
+
+  react@19.2.7:
+    resolution: {integrity: sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==}
+    engines: {node: '>=0.10.0'}
 
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
@@ -1864,6 +1877,8 @@ snapshots:
 
   husky@9.1.7: {}
 
+  immer@11.1.8: {}
+
   import-without-cache@0.4.0: {}
 
   is-fullwidth-code-point@5.1.0:
@@ -1979,6 +1994,8 @@ snapshots:
   punycode@2.3.1: {}
 
   quansync@1.0.0: {}
+
+  react@19.2.7: {}
 
   require-from-string@2.0.2: {}
 
