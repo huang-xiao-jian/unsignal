@@ -58,7 +58,7 @@ const Counter = observer(function Counter() {
 
 #### `Observer`
 
-`Render prop` 组件，用于在组件树中内联响应式渲染片段。仅该片段依赖的 `signal` 变化时触发局部重渲染，不影响父组件。
+`Render prop` 组件，用于在组件树中内联响应式渲染片段，适用于需要在非 `observer wrapped` 组件中局部使用 `signal` 的场景
 
 ```ts
 interface ObserverProps {
@@ -67,12 +67,6 @@ interface ObserverProps {
 
 const Observer: FunctionComponent<ObserverProps>;
 ```
-
-**行为说明：**
-
-- 内部复用 `observer` 的响应式追踪机制
-- `children` 为渲染函数，函数体内读取的 `signal` 变化时仅该片段重渲染
-- 适用于需要在非 `observer` 组件中局部使用 `signal` 的场景
 
 **用法示例：**
 
