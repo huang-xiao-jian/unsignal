@@ -17,7 +17,7 @@
 ### 设计原则
 
 - 功能与 `@preact/signals-react` 互补，不重复其已有 API（`useSignal` / `useComputed` / `useSignalEffect` / `useSignals`），API 不进行重导出
-- 仅使用 `@preact/signals-core` 公开 API（`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`），**禁止使用未公开的 `subscribe()` 方法**
+- 仅使用 `@preact/signals-core` 公开 API（`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`），**禁止使用未公开的方法！**
 - `observer` 实现基于 `React.useSyncExternalStore` + `effect()` 依赖追踪：使用 `useSyncExternalStore` 订阅外部信号变化，`effect()` 在渲染阶段自动追踪组件读取的 `signal` 依赖，信号变化时触发重渲染
 
 ### API Reference
