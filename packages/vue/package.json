@@ -16,9 +16,10 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "jsdom": "^29.1.1"
   },
   "peerDependencies": {
     "@preact/signals-core": "^1.14.2",

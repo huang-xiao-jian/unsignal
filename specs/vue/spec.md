@@ -170,16 +170,12 @@ import { Plugin } from '@unsignal/vue';
 import App from './App.vue';
 
 const app = createApp(App);
+
 app.use(Plugin);
 app.mount('#app');
 ```
 
-### SSR 支持
-
-- `useSignalValue` / `useSignalState` 在 `SSR` 阶段（`onScopeDispose` 不可用时）返回 `signal.peek()` 的当前值，不创建 `effect`
-- `Observer` 组件在 `SSR` 阶段直接渲染插槽内容，不创建 `effect`
-
-### 与 Vue 响应式系统互操作
+### Vue 响应式系统集成
 
 `useSignalValue` 返回的 `ShallowRef` 可与 `Vue` 生态无缝协作：
 
