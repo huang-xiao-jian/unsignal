@@ -16,7 +16,9 @@
 
 - 将 `@preact/signals-core` 的 `Signal` 桥接为 `Vue 3` 响应式系统可识别的 `ShallowRef`，使 `Signal` 在模板、`watch`、`computed` 等场景中无缝使用
 - 功能聚焦互补，不重复 `@preact/signals-core` 已有的基础原语（`signal` / `computed` / `effect`），`API` 不进行重导出
-- 自动管理所有 `signal` 订阅，避免内存泄漏
+- 仅使用 `@preact/signals-core` 公开 API（`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`），**禁止使用未公开的 `subscribe()` 方法**
+- 使用 `effect()` 实现 Signal → Vue 响应式系统的桥接：在 `effect` 回调中读取 `signal.value` 建立依赖追踪，信号变化时 `effect` 自动重新执行，将新值同步到 `shallowRef`
+- 自动管理所有 `signal` 订阅，通过 `onScopeDispose` 调用 `effect()` 返回的 `dispose` 函数清理，避免内存泄漏
 
 ### API Reference
 
@@ -28,7 +30,7 @@
 import type { ShallowRef } from 'vue';
 import type { ReadonlySignal } from '@preact/signals-core';
 
-function useSignalValue<T>(source: Signal<T> | ReadonlySignal<T>): Readonly<ShallowRef<T>>;
+function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 ```
 
 **用法示例：**
@@ -123,15 +125,19 @@ function onToggle(id: number) {
 </template>
 ```
 
-#### `Observer`
+#### `Plugin`
 
-无渲染 Vue 组件，将默认插槽包装为响应式渲染片段。插槽内读取的 `signal` 变化时仅触发该片段重渲染，不影响父组件
+实现 `Vue` 插件，全局注册后 `Observer` 组件可全局使用，无需逐文件导入
 
 ```ts
-import type { DefineComponent } from 'vue';
+import type { Plugin as VuePlugin } from 'vue';
 
-const Observer: DefineComponent<{}, {}, {}>;
+export const SignalPlugin: VuePlugin;
 ```
+
+#### `Observer`
+
+无渲染 `Vue` 组件，将默认插槽包装为响应式渲染片段。插槽内读取的 `signal` 变化时仅触发该片段重渲染，不影响父组件
 
 **用法示例：**
 
@@ -170,8 +176,8 @@ app.mount('#app');
 
 ### SSR 支持
 
-- `useSignalValue` / `useSignalState` 在 SSR 阶段返回 `signal.peek()` 的当前值，不创建 `effect`
-- `Observer` 组件在 SSR 阶段直接渲染插槽内容，不创建 `effect`
+- `useSignalValue` / `useSignalState` 在 `SSR` 阶段（`onScopeDispose` 不可用时）返回 `signal.peek()` 的当前值，不创建 `effect`
+- `Observer` 组件在 `SSR` 阶段直接渲染插槽内容，不创建 `effect`
 
 ### 与 Vue 响应式系统互操作
 
