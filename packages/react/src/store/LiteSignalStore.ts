@@ -1,15 +1,6 @@
 import { effect } from '@preact/signals-core';
-import { useId } from 'react';
 
-export type StoreChangeCallback = () => void;
-
-export interface SignalStore<Snapshot> {
-  subscribe: (onStoreChange: StoreChangeCallback) => () => void;
-  getSnapshot: () => Snapshot;
-  getServerSnapshot?: () => Snapshot;
-}
-
-export type DisposerFn = () => void;
+import type { DisposerFn, SignalStore, StoreChangeCallback } from './types';
 
 /**
  * A lite implementation of SignalStore.
@@ -17,7 +8,7 @@ export type DisposerFn = () => void;
  * It only notifies subscribers when the signal value changes, not for signal snapshots.
  * It isolates the signal subscriptions from framework-level subscriptions.
  */
-class LiteSignalStore implements SignalStore<Symbol> {
+export class LiteSignalStore implements SignalStore<Symbol> {
   // the immutibility tracker
   private value: Symbol = Symbol();
 
@@ -76,20 +67,4 @@ class LiteSignalStore implements SignalStore<Symbol> {
   getServerSnapshot = () => {
     return this.value;
   };
-}
-
-const LITE_SIGNAL_STORES = new Map<string, LiteSignalStore>();
-
-/**
- * Instantiates a lite signal store with memory cache.
- */
-export function useLiteSignalStore(): LiteSignalStore {
-  // the component level unique and stable id
-  const id = useId();
-
-  if (!LITE_SIGNAL_STORES.has(id)) {
-    LITE_SIGNAL_STORES.set(id, new LiteSignalStore());
-  }
-
-  return LITE_SIGNAL_STORES.get(id)!;
 }

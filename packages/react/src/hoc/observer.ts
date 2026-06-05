@@ -1,6 +1,6 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import { memo, useSyncExternalStore } from 'react';
-import { useLiteSignalStore } from './store';
+import { useLiteSignalStore } from '../store/useLiteSignalStore';
 
 export interface ObserverOptions {
   displayName?: string;
