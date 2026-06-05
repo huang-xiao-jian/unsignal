@@ -125,7 +125,7 @@ function onToggle(id: number) {
 </template>
 ```
 
-#### `Plugin`
+#### SignalPlugin
 
 实现 `Vue` 插件，全局注册后 `Observer` 组件可全局使用，无需逐文件导入
 
@@ -166,12 +166,12 @@ const count = signal(0);
 
 ```ts
 import { createApp } from 'vue';
-import { Plugin } from '@unsignal/vue';
+import { SignalPlugin } from '@unsignal/vue';
 import App from './App.vue';
 
 const app = createApp(App);
 
-app.use(Plugin);
+app.use(SignalPlugin);
 app.mount('#app');
 ```
 
