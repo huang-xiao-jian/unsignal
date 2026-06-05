@@ -1,55 +1,72 @@
 import { effect } from '@preact/signals-core';
 
+import { AtomicTimerScheduler } from './AtomicTimerScheduler';
 import type { DisposerFn, SignalStore, StoreChangeCallback } from './types';
 
 /**
  * A lite implementation of SignalStore.
  *
  * It only notifies subscribers when the signal value changes, not for signal snapshots.
- * It isolates the signal subscriptions from framework-level subscriptions.
+ * It isolates signal tracking effects from framework-level subscriptions.
+ *
+ * Lifecycle responsibilities:
+ * - `track(fn)` is called during React render to establish signal dependencies.
+ *   It disposes previous tracking effects but NEVER touches subscribers —
+ *   subscriber lifecycle is managed exclusively by subscribe/unsubscribe.
+ * - `release()` schedules deferred disposal of tracking effects via the deferrer.
+ * - `restore()` cancels a pending deferred disposal (e.g. for React StrictMode remounts).
  */
 export class LiteSignalStore implements SignalStore<Symbol> {
-  // the immutibility tracker
   private value: Symbol = Symbol();
-
-  // the framework-level subscribers
   private subscribers = new Set<StoreChangeCallback>();
-
-  // in memory disposers for signal subscriptions
   private disposers = new Set<DisposerFn>();
-
-  // flag to mark the initial run or consequent run of the effect
+  private deferrer = new AtomicTimerScheduler();
   private initial = true;
 
-  track(fn: () => void) {
-    // reset initial flag
+  /**
+   * Tracks signal dependencies accessed inside `fn`.
+   *
+   * Disposes previous tracking effects immediately before creating a new one.
+   * Does NOT modify subscribers — subscriber lifecycle is independent.
+   */
+  track(fn: () => void): void {
+    this.disposers.forEach((dispose) => dispose());
+    this.disposers.clear();
     this.initial = true;
 
-    // release previous subscriptions
-    this.disposers.forEach((dispose) => dispose());
-    this.disposers.clear();
+    const dispose = effect(() => {
+      fn();
 
-    this.disposers.add(
-      effect(() => {
-        // Tracking invocation: establishes signal subscriptions
-        fn();
+      if (this.initial) {
+        this.initial = false;
+      } else {
+        this.value = Symbol();
+        this.subscribers.forEach((cb) => cb());
+      }
+    });
 
-        if (this.initial) {
-          this.initial = false;
-        } else {
-          // mutate the symbol value
-          this.value = Symbol();
-          // Effect invocation: run the subscribers for notification
-          this.subscribers.forEach((cb) => cb());
-        }
-      })
-    );
+    this.disposers.add(dispose);
   }
 
-  dispose() {
-    this.disposers.forEach((dispose) => dispose());
-    this.disposers.clear();
-    this.subscribers.clear();
+  /**
+   * Schedules deferred disposal of all signal tracking effects.
+   */
+  release(): void {
+    this.deferrer.schedule(() => {
+      this.disposers.forEach((dispose) => dispose());
+      this.disposers.clear();
+    });
+  }
+
+  /**
+   * Cancels a pending deferred disposal scheduled by `release()`.
+   *
+   * If no disposal is pending, this is a no-op.
+   * Typically called during React StrictMode's simulated remount to
+   * restore the store's tracking effects before they are torn down.
+   */
+  restore(): void {
+    this.deferrer.cancel();
   }
 
   subscribe = (onStoreChange: StoreChangeCallback) => {

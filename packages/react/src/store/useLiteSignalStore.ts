@@ -1,24 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 import { LiteSignalStore } from './LiteSignalStore';
 
 /**
  * Instantiates a lite signal store scoped to the component lifecycle.
  * The store is lazily created and released for GC on unmount.
+ *
+ * Uses useState lazy initializer to keep the store instance stable
+ * across React StrictMode's simulated unmount/remount cycle.
  */
 export function useLiteSignalStore(): LiteSignalStore {
-  const storeRef = useRef<LiteSignalStore | null>(null);
+  const [store] = useState(() => new LiteSignalStore());
 
-  if (storeRef.current === null) {
-    storeRef.current = new LiteSignalStore();
-  }
-
+  // Adapt the StrictMode simulated unmount/remount cycle, avoid render phase effects loss
   useEffect(() => {
-    return () => {
-      storeRef.current?.dispose();
-      storeRef.current = null;
-    };
-  }, []);
+    store.restore();
 
-  return storeRef.current;
+    return () => {
+      store.release();
+    };
+  }, [store]);
+
+  return store;
 }

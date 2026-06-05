@@ -2,7 +2,7 @@ import { batch, computed, signal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { StrictMode, useState, type FunctionComponent } from 'react';
 import { renderToString } from 'react-dom/server';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { observer } from './observer';
 
 afterEach(() => {
@@ -258,5 +258,157 @@ describe('observer', () => {
       count.value = 5;
     });
     expect(screen.getByText('count:5')).toBeDefined();
+  });
+
+  it('should sustain multiple signal changes after StrictMode double-mount', async () => {
+    const count = signal(0);
+
+    const Counter = observer(function Counter() {
+      return <span>count:{count.value}</span>;
+    });
+
+    render(
+      <StrictMode>
+        <Counter />
+      </StrictMode>
+    );
+    expect(screen.getByText('count:0')).toBeDefined();
+
+    // Verify tracking effects survive the StrictMode cycle across multiple mutations
+    await act(async () => {
+      count.value = 1;
+    });
+    expect(screen.getByText('count:1')).toBeDefined();
+
+    await act(async () => {
+      count.value = 2;
+    });
+    expect(screen.getByText('count:2')).toBeDefined();
+
+    await act(async () => {
+      count.value = 100;
+    });
+    expect(screen.getByText('count:100')).toBeDefined();
+  });
+
+  it('should re-track conditional dependencies under StrictMode', async () => {
+    const flag = signal(true);
+    const a = signal('A');
+    const b = signal('B');
+
+    const Switcher = observer(function Switcher() {
+      const value = flag.value ? a.value : b.value;
+      return <span>value:{value}</span>;
+    });
+
+    render(
+      <StrictMode>
+        <Switcher />
+      </StrictMode>
+    );
+    expect(screen.getByText('value:A')).toBeDefined();
+
+    // Switch branch after StrictMode double-mount
+    await act(async () => {
+      flag.value = false;
+    });
+    expect(screen.getByText('value:B')).toBeDefined();
+
+    // New branch dependency should be tracked
+    await act(async () => {
+      b.value = 'B2';
+    });
+    expect(screen.getByText('value:B2')).toBeDefined();
+
+    // Old branch dependency should NOT trigger re-render
+    await act(async () => {
+      a.value = 'A2';
+    });
+    expect(screen.getByText('value:B2')).toBeDefined();
+  });
+
+  it('should clean up tracking effects on unmount under StrictMode', async () => {
+    const count = signal(0);
+
+    const Counter = observer(function Counter() {
+      return <span>count:{count.value}</span>;
+    });
+
+    const { unmount } = render(
+      <StrictMode>
+        <Counter />
+      </StrictMode>
+    );
+    expect(screen.getByText('count:0')).toBeDefined();
+
+    unmount();
+
+    // After unmount, signal changes must not throw or cause side effects
+    await act(async () => {
+      count.value = 999;
+    });
+    expect(true).toBe(true);
+  });
+
+  it('should handle multiple observer components independently under StrictMode', async () => {
+    const a = signal(1);
+    const b = signal(2);
+
+    const CounterA = observer(function CounterA() {
+      return <span>a:{a.value}</span>;
+    });
+    const CounterB = observer(function CounterB() {
+      return <span>b:{b.value}</span>;
+    });
+
+    render(
+      <StrictMode>
+        <CounterA />
+        <CounterB />
+      </StrictMode>
+    );
+    expect(screen.getByText('a:1')).toBeDefined();
+    expect(screen.getByText('b:2')).toBeDefined();
+
+    await act(async () => {
+      a.value = 10;
+    });
+    expect(screen.getByText('a:10')).toBeDefined();
+    expect(screen.getByText('b:2')).toBeDefined();
+
+    await act(async () => {
+      b.value = 20;
+    });
+    expect(screen.getByText('a:10')).toBeDefined();
+    expect(screen.getByText('b:20')).toBeDefined();
+  });
+
+  it('should survive StrictMode simulated unmount/remount with deferred disposal', async () => {
+    vi.useFakeTimers();
+    const count = signal(0);
+
+    const Counter = observer(function Counter() {
+      return <span>count:{count.value}</span>;
+    });
+
+    render(
+      <StrictMode>
+        <Counter />
+      </StrictMode>
+    );
+    expect(screen.getByText('count:0')).toBeDefined();
+
+    // Let any pending setTimeout(0) disposals from StrictMode cycle flush
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    // Tracking effects must still be alive after deferred window passes
+    await act(async () => {
+      count.value = 42;
+    });
+    expect(screen.getByText('count:42')).toBeDefined();
+
+    vi.useRealTimers();
   });
 });

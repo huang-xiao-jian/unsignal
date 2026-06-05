@@ -1,5 +1,6 @@
 import { signal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSignalState } from './useSignalState';
 
@@ -216,5 +217,160 @@ describe('useSignalState', () => {
       capturedMutate?.(999);
     });
     expect(source.value).toBe(999);
+  });
+
+  describe('React.StrictMode', () => {
+    it('should accept plain value mutation under StrictMode', async () => {
+      const source = signal(0);
+
+      function Consumer() {
+        const [value, mutate] = useSignalState(source);
+        return (
+          <div>
+            <span>value:{value}</span>
+            <button onClick={() => mutate(42)}>set</button>
+          </div>
+        );
+      }
+
+      render(
+        <StrictMode>
+          <Consumer />
+        </StrictMode>
+      );
+      expect(screen.getByText('value:0')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('set').click();
+      });
+      expect(screen.getByText('value:42')).toBeDefined();
+      expect(source.value).toBe(42);
+    });
+
+    it('should accept function updater under StrictMode', async () => {
+      const source = signal(10);
+
+      function Consumer() {
+        const [value, mutate] = useSignalState(source);
+        return (
+          <div>
+            <span>value:{value}</span>
+            <button onClick={() => mutate((v) => v + 5)}>add</button>
+          </div>
+        );
+      }
+
+      render(
+        <StrictMode>
+          <Consumer />
+        </StrictMode>
+      );
+      expect(screen.getByText('value:10')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('add').click();
+      });
+      expect(screen.getByText('value:15')).toBeDefined();
+      expect(source.value).toBe(15);
+    });
+
+    it('should support immer mutating style under StrictMode', async () => {
+      interface User {
+        name: string;
+        age: number;
+      }
+      const source = signal<User>({ name: 'Alice', age: 30 });
+
+      function Consumer() {
+        const [value, mutate] = useSignalState(source);
+        const onBirthday = () =>
+          mutate((draft) => {
+            draft.age += 1;
+          });
+        return (
+          <div>
+            <span>
+              {value.name}:{value.age}
+            </span>
+            <button onClick={onBirthday}>birthday</button>
+          </div>
+        );
+      }
+
+      render(
+        <StrictMode>
+          <Consumer />
+        </StrictMode>
+      );
+      expect(screen.getByText('Alice:30')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('birthday').click();
+      });
+      expect(screen.getByText('Alice:31')).toBeDefined();
+      expect(source.value).toEqual({ name: 'Alice', age: 31 });
+    });
+
+    it('should handle multiple sequential mutations under StrictMode', async () => {
+      const source = signal(0);
+
+      function Consumer() {
+        const [value, mutate] = useSignalState(source);
+        return (
+          <div>
+            <span>value:{value}</span>
+            <button onClick={() => mutate((v) => v + 1)}>inc</button>
+          </div>
+        );
+      }
+
+      render(
+        <StrictMode>
+          <Consumer />
+        </StrictMode>
+      );
+      expect(screen.getByText('value:0')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('inc').click();
+      });
+      expect(screen.getByText('value:1')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('inc').click();
+      });
+      expect(screen.getByText('value:2')).toBeDefined();
+
+      await act(async () => {
+        screen.getByText('inc').click();
+      });
+      expect(screen.getByText('value:3')).toBeDefined();
+      expect(source.value).toBe(3);
+    });
+
+    it('should not cause errors when mutate is called after unmount under StrictMode', async () => {
+      const source = signal(0);
+      let capturedMutate: ((v: number | ((d: number) => number)) => void) | undefined;
+
+      function Consumer() {
+        const [, mutate] = useSignalState(source);
+        capturedMutate = mutate as typeof capturedMutate;
+        return <span>value:{source.peek()}</span>;
+      }
+
+      const { unmount } = render(
+        <StrictMode>
+          <Consumer />
+        </StrictMode>
+      );
+      expect(screen.getByText('value:0')).toBeDefined();
+
+      unmount();
+
+      await act(async () => {
+        capturedMutate?.(999);
+      });
+      expect(source.value).toBe(999);
+    });
   });
 });

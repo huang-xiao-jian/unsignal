@@ -1,7 +1,7 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import { observer } from '../hoc/observer';
 
-interface ObserverProps {
+export interface ObserverProps {
   children: () => ReactNode;
 }
 
