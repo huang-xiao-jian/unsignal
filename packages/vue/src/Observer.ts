@@ -1,5 +1,5 @@
 import { effect } from '@preact/signals-core';
-import { defineComponent, onScopeDispose, ref, type Ref } from 'vue';
+import { defineComponent, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue';
 
 export const Observer = defineComponent({
   name: 'Observer',
@@ -13,7 +13,10 @@ export const Observer = defineComponent({
       // 递增 tick 触发 Observer 自身重渲染
       tick.value++;
     });
-    onScopeDispose(dispose);
+
+    if (getCurrentScope()) {
+      onScopeDispose(dispose);
+    }
 
     return () => {
       // tick.value 在 render 中被读取，建立 Vue 响应式依赖

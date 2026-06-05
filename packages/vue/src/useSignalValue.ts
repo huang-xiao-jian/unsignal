@@ -1,5 +1,5 @@
 import { effect, type ReadonlySignal } from '@preact/signals-core';
-import { onScopeDispose, shallowRef, type ShallowRef } from 'vue';
+import { getCurrentScope, onScopeDispose, shallowRef, type ShallowRef } from 'vue';
 
 export function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>> {
   const ref = shallowRef<T>(source.peek());
@@ -7,7 +7,10 @@ export function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRe
   const dispose = effect(() => {
     ref.value = source.value;
   });
-  onScopeDispose(dispose);
+
+  if (getCurrentScope()) {
+    onScopeDispose(dispose);
+  }
 
   return ref as Readonly<ShallowRef<T>>;
 }
