@@ -1,53 +1,38 @@
-import { effect } from '@preact/signals-core';
 import type { FunctionComponent, ReactNode } from 'react';
-import { memo, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { memo, useSyncExternalStore } from 'react';
+import { useLiteSignalStore } from './store';
 
 export interface ObserverOptions {
   displayName?: string;
 }
 
-const STATIC_VERSION = {};
-
 function useObserver<P extends object>(component: FunctionComponent<P>, props: P): ReactNode {
-  const versionRef = useRef<object>({});
-  const onStoreChangeRef = useRef<() => void>(() => {});
-  const resultRef = useRef<ReactNode>(null);
+  const store = useLiteSignalStore();
 
-  // Phase 1: render the component (hooks work, signals are read)
-  resultRef.current = component(props) as ReactNode;
+  // render the original component, but have the
+  // reaction track the observables, so that rendering
+  // can be invalidated (see above) once a dependency changes
+  let renderResult;
+  let exception;
 
-  // Phase 2: useSyncExternalStore subscribes to version changes
-  const subscribe = useCallback((onStoreChange: () => void) => {
-    onStoreChangeRef.current = onStoreChange;
-    return () => {
-      onStoreChangeRef.current = () => {};
-    };
-  }, []);
+  // only support client side
+  useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 
-  const getSnapshot = useCallback(() => versionRef.current, []);
-  const getServerSnapshot = useCallback(() => STATIC_VERSION, []);
+  // tolerate exceptions in smooth way
+  store.track(() => {
+    try {
+      renderResult = component(props);
+    } catch (e) {
+      exception = e;
+    }
+  });
 
-  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  // re-throw any exceptions caught during rendering
+  if (exception) {
+    throw exception;
+  }
 
-  // Phase 3: useEffect creates effect() to track signal dependencies
-  // The effect invokes component(props) to establish the same signal reads
-  // as the render phase. When any tracked signal changes, version is bumped
-  // and onStoreChange triggers a React re-render.
-  useEffect(() => {
-    let isInitial = true;
-    const dispose = effect(() => {
-      // Tracking invocation: establishes signal subscriptions
-      component(props);
-      if (!isInitial) {
-        versionRef.current = {};
-        onStoreChangeRef.current();
-      }
-      isInitial = false;
-    });
-    return dispose;
-  }); // no deps: re-track after every render to capture current dependency set
-
-  return resultRef.current;
+  return renderResult;
 }
 
 export function observer<P extends object>(
