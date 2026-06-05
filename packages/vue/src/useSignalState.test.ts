@@ -1,6 +1,7 @@
 import { signal } from '@preact/signals-core';
 import { describe, expect, it } from 'vitest';
-import { effectScope, type ShallowRef } from 'vue';
+import { createSSRApp, defineComponent, effectScope, h, type ShallowRef } from 'vue';
+import { renderToString } from 'vue/server-renderer';
 import { useSignalState } from './useSignalState';
 
 describe('useSignalState', () => {
@@ -219,5 +220,44 @@ describe('useSignalState', () => {
     });
 
     scope.stop();
+  });
+
+  it('should render initial signal value in SSR context', async () => {
+    const source = signal(99);
+
+    const Comp = defineComponent({
+      setup() {
+        const [ref] = useSignalState(source);
+        return () => h('span', `state:${ref.value}`);
+      },
+    });
+
+    const app = createSSRApp(Comp);
+    const html = await renderToString(app);
+    expect(html).toContain('state:99');
+  });
+
+  it('should not sync ref after scope stop but mutate still writes to signal', () => {
+    const source = signal(0);
+    const scope = effectScope();
+    let capturedRef: Readonly<ShallowRef<number>> | undefined;
+    let capturedMutate: ((v: number | ((d: number) => number)) => void) | undefined;
+
+    scope.run(() => {
+      const [ref, mutate] = useSignalState(source);
+      capturedRef = ref;
+      capturedMutate = mutate;
+      mutate(1);
+      expect(ref.value).toBe(1);
+    });
+
+    scope.stop();
+
+    // mutate still writes to signal (direct signal.value assignment)
+    capturedMutate!(100);
+    expect(source.value).toBe(100);
+
+    // but ref no longer syncs (effect disposed)
+    expect(capturedRef?.value).toBe(1);
   });
 });

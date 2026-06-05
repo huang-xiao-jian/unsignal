@@ -1,6 +1,15 @@
 import { computed, signal, type ReadonlySignal } from '@preact/signals-core';
-import { describe, expect, it } from 'vitest';
-import { effectScope } from 'vue';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createSSRApp,
+  defineComponent,
+  effectScope,
+  h,
+  nextTick,
+  computed as vueComputed,
+  watch,
+} from 'vue';
+import { renderToString } from 'vue/server-renderer';
 import { useSignalValue } from './useSignalValue';
 
 describe('useSignalValue', () => {
@@ -135,6 +144,60 @@ describe('useSignalValue', () => {
       // 写访问在类型上被禁止（Readonly<ShallowRef<T>>）
       // @ts-expect-error - readonly ShallowRef 不可写
       ref.value = 1;
+    });
+
+    scope.stop();
+  });
+
+  it('should render initial signal value in SSR context', async () => {
+    const source = signal(42);
+
+    const Comp = defineComponent({
+      setup() {
+        const ref = useSignalValue(source);
+        return () => h('span', `value:${ref.value}`);
+      },
+    });
+
+    const app = createSSRApp(Comp);
+    const html = await renderToString(app);
+    expect(html).toContain('value:42');
+  });
+
+  it('should work with Vue watch() integration', async () => {
+    const source = signal(0);
+    const scope = effectScope();
+    const watchCallback = vi.fn();
+
+    scope.run(() => {
+      const ref = useSignalValue(source);
+      watch(ref, (newVal) => {
+        watchCallback(newVal);
+      });
+    });
+
+    source.value = 10;
+    await nextTick();
+    expect(watchCallback).toHaveBeenCalledWith(10);
+
+    source.value = 99;
+    await nextTick();
+    expect(watchCallback).toHaveBeenCalledWith(99);
+
+    scope.stop();
+  });
+
+  it('should work with Vue computed() integration', () => {
+    const source = signal(5);
+    const scope = effectScope();
+
+    scope.run(() => {
+      const ref = useSignalValue(source);
+      const label = vueComputed(() => `count=${ref.value}`);
+      expect(label.value).toBe('count=5');
+
+      source.value = 20;
+      expect(label.value).toBe('count=20');
     });
 
     scope.stop();
