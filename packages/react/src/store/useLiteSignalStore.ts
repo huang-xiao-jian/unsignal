@@ -1,19 +1,24 @@
-import { useId } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { LiteSignalStore } from './LiteSignalStore';
 
-const LITE_SIGNAL_STORES = new Map<string, LiteSignalStore>();
-
 /**
- * Instantiates a lite signal store with memory cache.
+ * Instantiates a lite signal store scoped to the component lifecycle.
+ * The store is lazily created and released for GC on unmount.
  */
 export function useLiteSignalStore(): LiteSignalStore {
-  // the component level unique and stable id
-  const id = useId();
+  const storeRef = useRef<LiteSignalStore | null>(null);
 
-  if (!LITE_SIGNAL_STORES.has(id)) {
-    LITE_SIGNAL_STORES.set(id, new LiteSignalStore());
+  if (storeRef.current === null) {
+    storeRef.current = new LiteSignalStore();
   }
 
-  return LITE_SIGNAL_STORES.get(id)!;
+  useEffect(() => {
+    return () => {
+      storeRef.current?.dispose();
+      storeRef.current = null;
+    };
+  }, []);
+
+  return storeRef.current;
 }
