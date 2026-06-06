@@ -8,11 +8,13 @@
 └── packages
     ├── vue
     └── react
+    └── core
 ```
 
 ## 包职责划分
 
-| 包                     | 职责                               |
-| :--------------------- | :--------------------------------- |
-| `@unsignal/vue`       | Signal binding for Vue3               |
-| `@unsignal/react`      | Signal binding for React19       |
+| 包                | 职责                            |
+| :---------------- | :------------------------------ |
+| `@unsignal/vue`   | Signal binding for Vue3         |
+| `@unsignal/react` | Signal binding for React19      |
+| `@unsignal/core`  | Signal enhancement for original |

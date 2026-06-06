@@ -51,6 +51,15 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.1)(@vitest/ui@4.1.8)(jsdom@29.1.1)(vite@7.3.3(@types/node@25.9.1)(yaml@2.9.0))
 
+  packages/core:
+    devDependencies:
+      '@preact/signals-core':
+        specifier: ^1.14.2
+        version: 1.14.2
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.19
+
   packages/react:
     devDependencies:
       '@preact/signals-core':
