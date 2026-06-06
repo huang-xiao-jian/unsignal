@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  slice-ansi@8.0.0>ansi-styles: ^6.2.3
+
 importers:
 
   .:
