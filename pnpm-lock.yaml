@@ -61,6 +61,10 @@ importers:
         version: 22.19.19
 
   packages/react:
+    dependencies:
+      '@unsignal/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@preact/signals-core':
         specifier: ^1.14.2

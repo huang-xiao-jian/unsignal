@@ -16,6 +16,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@unsignal/core": "workspace:*"
+  },
   "devDependencies": {
     "@preact/signals-core": "^1.14.2",
     "@testing-library/react": "^16.3.2",

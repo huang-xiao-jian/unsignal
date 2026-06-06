@@ -1,4 +1,4 @@
-import { effect } from '@preact/signals-core';
+import { reaction } from '@unsignal/core';
 
 import { AtomicTimerScheduler } from './AtomicTimerScheduler';
 import type { DisposerFn, SignalStore, StoreChangeCallback } from './types';
@@ -21,7 +21,6 @@ export class LiteSignalStore implements SignalStore<Symbol> {
   private subscribers = new Set<StoreChangeCallback>();
   private disposers = new Set<DisposerFn>();
   private deferrer = new AtomicTimerScheduler();
-  private initial = true;
 
   /**
    * Tracks signal dependencies accessed inside `fn`.
@@ -32,17 +31,10 @@ export class LiteSignalStore implements SignalStore<Symbol> {
   track(fn: () => void): void {
     this.disposers.forEach((dispose) => dispose());
     this.disposers.clear();
-    this.initial = true;
 
-    const dispose = effect(() => {
-      fn();
-
-      if (this.initial) {
-        this.initial = false;
-      } else {
-        this.value = Symbol();
-        this.subscribers.forEach((cb) => cb());
-      }
+    const dispose = reaction(fn, () => {
+      this.value = Symbol();
+      this.subscribers.forEach((cb) => cb());
     });
 
     this.disposers.add(dispose);
