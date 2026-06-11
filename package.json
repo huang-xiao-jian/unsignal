@@ -4,11 +4,16 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "changeset": "changeset",
     "prepare": "husky",
+    "release": "changeset publish",
     "test": "turbo test",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "version-packages": "changeset version"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
     "@types/node": "^25.9.1",
     "@vitest/ui": "^4.1.8",
     "husky": "^9.1.7",

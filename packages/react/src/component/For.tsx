@@ -17,13 +17,15 @@ interface ForItemProps<T> {
   children: (item: T, index: number) => ReactNode;
 }
 
+type ForItemComponent = <T>(props: ForItemProps<T>) => ReactElement;
+
 const ForItem = observer(function ForItem<T>({
   item,
   index,
   children,
 }: ForItemProps<T>): ReactElement {
   return <>{children(item, index)}</>;
-}) as <T>(props: ForItemProps<T>) => ReactElement;
+}) as ForItemComponent;
 
 export function For<T>({ each, by, fallback = null, children }: ForProps<T>): ReactElement {
   const items = useSignalValue(each);

@@ -1,16 +1,32 @@
 {
   "name": "@unsignal/core",
   "version": "0.0.0",
+  "homepage": "https://github.com/huang-xiao-jian/unsignal#readme",
+  "bugs": {
+    "url": "https://github.com/huang-xiao-jian/unsignal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huang-xiao-jian/unsignal.git"
+  },
+  "license": "MIT",
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsdown",
     "test": "vitest run",
@@ -22,5 +38,9 @@
   },
   "peerDependencies": {
     "@preact/signals-core": "^1.14.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
