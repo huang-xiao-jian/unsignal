@@ -131,8 +131,13 @@ Reads and writes an external writable `Signal`, with an API style similar to `us
 
 ```ts
 import type { Signal } from '@preact/signals-core';
+import type { Draft } from 'immer';
 
-type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+type Mutator<T> = T extends Primitive
+  ? (updater: T | ((prev: T) => T)) => void
+  : (updater: (draft: Draft<T>) => void) => void;
 
 function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 ```
@@ -141,8 +146,8 @@ function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 
 - Only supports writable `Signal`, not `ReadonlySignal`
 - `immer` is a required `peerDependency`; `Mutator` supports:
-  - `(draft: T) => void`: mutable style, for objects / arrays
-  - `(draft: T) => T`: returns a new value, for primitives
+  - primitive values: assign a plain value, or pass `(prev: T) => T`
+  - objects / arrays: pass an immer producer `(draft: Draft<T>) => void`
 
 **Usage Example:**
 
@@ -207,13 +212,17 @@ function TodoList() {
 Runs a side-effect that automatically tracks signal dependencies. Re-runs whenever any tracked signal changes. Cleans up automatically on unmount.
 
 ```ts
-function useSignalEffect(callback: () => void | (() => void)): void;
+import type { EffectOptions } from '@preact/signals-core';
+
+function useSignalEffect(callback: () => void | (() => void), options?: EffectOptions): void;
 ```
 
 **Behavior:**
 
 - Auto-tracks any `signal.value` read inside `callback`; re-runs on change
 - Supports an optional cleanup function; disposed on unmount
+- Passes `options` to the underlying `effect()` when the inner signal effect is created
+- React re-renders, including options object identity changes, do not recreate the inner signal effect
 
 **Usage Example:**
 
@@ -224,9 +233,12 @@ import { useSignalEffect } from '@unsignal/react';
 const count = signal(0);
 
 function Logger() {
-  useSignalEffect(() => {
-    console.log('count changed to:', count.value);
-  });
+  useSignalEffect(
+    () => {
+      console.log('count changed to:', count.value);
+    },
+    { name: 'count logger' }
+  );
   return null;
 }
 ```
@@ -238,13 +250,19 @@ Bridges a normal React value (from props, `useState`, `useMemo`, etc.) into the 
 ```ts
 import type { ReadonlySignal } from '@preact/signals-core';
 
-function useLiveSignal<T>(value: T): ReadonlySignal<T>;
+interface UseLiveSignalOptions<T> {
+  equals?: (previous: T, next: T) => boolean;
+}
+
+function useLiveSignal<T>(value: T, options?: UseLiveSignalOptions<T>): ReadonlySignal<T>;
 ```
 
 **Behavior:**
 
 - Returns a stable `ReadonlySignal<T>` whose `.value` stays in sync with `value` on every render
 - The returned signal identity is stable across renders — safe to pass to `computed`, `effect`, etc.
+- Uses `Object.is` equality by default to avoid unnecessary signal writes
+- Supports custom equality via `options.equals`; when `equals(previous, next)` returns `true`, the signal value is not updated
 
 **Usage Example:**
 
@@ -264,6 +282,25 @@ function Counter({ initialCount }: CounterProps) {
   const doubled = computed(() => countSig.value * 2);
 
   return <p>{doubled.value}</p>;
+}
+```
+
+**Custom equality example:**
+
+```tsx
+import { useLiveSignal } from '@unsignal/react';
+
+interface User {
+  id: number;
+  name: string;
+}
+
+function UserView({ user }: { user: User }) {
+  const userSig = useLiveSignal(user, {
+    equals: (previous, next) => previous.id === next.id,
+  });
+
+  return <p>{userSig.value.name}</p>;
 }
 ```
 
@@ -360,7 +397,7 @@ function TodoList() {
 
 #### `Switch`
 
-Multi-branch conditional rendering driven by signal values. Uses a composition pattern: `Switch` holds the signal source, `Switch.Case` declares a plain value to compare against, and `Switch.Default` provides the fallback. Only the first matching branch is mounted. Comparison is strict (`===`) by default, with an optional custom equality function.
+Multi-branch conditional rendering driven by signal values. Uses a composition pattern: `Switch` holds the signal source, `Switch.Case` declares a plain value to compare against, and `Switch.Default` provides the fallback. Only the first matching branch is mounted. Comparison uses `Object.is` by default, with an optional custom equality function.
 
 ```ts
 import type { ReadonlySignal } from '@preact/signals-core';
@@ -368,7 +405,7 @@ import type { ReactNode } from 'react';
 
 interface SwitchProps<T> {
   when: ReadonlySignal<T>;
-  equal?: (a: T, b: T) => boolean; // defaults to strict equality (===)
+  equal?: (a: T, b: T) => boolean; // defaults to Object.is
   children: ReactNode; // Switch.Case / Switch.Default elements
 }
 
@@ -391,7 +428,7 @@ Switch.Default = Default;
 
 **Behavior:**
 
-- `Switch` reads the signal; each `Switch.Case` compares `is` against it using `equal` (strict `===` by default)
+- `Switch` reads the signal; each `Switch.Case` compares `is` against it using `equal` (`Object.is` by default)
 - Only the first matching `Switch.Case` is rendered; otherwise `Switch.Default`
 
 **Usage Example (static children):**
