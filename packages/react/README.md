@@ -1,24 +1,24 @@
 # @unsignal/react
 
-> Signal binding for React 19, powered by [@preact/signals-core](https://github.com/preactjs/signals/tree/main/packages/core).
+> Signal binding for React 19, powered by [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
 
-Provides [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite) style reactive bridging between `@preact/signals-core` and React's rendering system.
+Provides `mobx-react-lite`-style reactive bridging between `@preact/signals-core` and React's rendering system.
 
 ## Features
 
-- Automatic signal dependency tracking via `observer` HOC
-- Fine-grained reactivity with `Observer` render-prop component
-- Seamless signal reading with `useSignalValue` hook
-- Immer-powered state updates with `useSignalState` hook
-- Built on `useSyncExternalStore` — full Concurrent Mode support
-- SSR compatible (with `getServerSnapshot`)
+- Automatic signal dependency tracking via `observer`
+- Fine-grained reactivity with `Observer`, `Show`, `For`, and `Switch`
+- Signal reading with `useSignalValue`
+- Read-write state with `useSignalState`
+- React 19 concurrent-safe rendering via `useSyncExternalStore`
+- SSR compatible
 - TypeScript first-class
 
 ## Requirements
 
-- **React >= 19** (not compatible with earlier versions)
+- **React >= 19**
 - `@preact/signals-core >= 1.14`
-- `immer >= 11` (required peer dependency for `useSignalState`)
+- `immer >= 11` for `useSignalState`
 
 ## Installation
 
@@ -30,140 +30,141 @@ pnpm add @preact/signals-core @unsignal/react immer
 
 ### `observer`
 
-Wraps a function component to make it reactive. Signal reads inside the component are automatically tracked; any tracked signal change triggers a re-render.
+Wraps a function component into a reactive component. Signal reads inside the component are automatically tracked and any tracked signal change triggers a re-render.
 
 ```ts
+import type { FunctionComponent } from 'react';
+
+interface ObserverOptions {
+  displayName?: string;
+}
+
 function observer<P extends object>(
   component: FunctionComponent<P>,
-  options?: { displayName?: string }
+  options?: ObserverOptions
 ): FunctionComponent<P>;
-```
-
-- Automatically collects signal dependencies read during render
-- Uses `useSyncExternalStore` internally — full Concurrent Mode support
-- Applies `React.memo` by default for performance
-
-```tsx
-import { signal } from '@preact/signals-core';
-import { observer } from '@unsignal/react';
-
-const count = signal(0);
-
-const Counter = observer(function Counter() {
-  return <p>Count: {count.value}</p>;
-});
 ```
 
 ### `Observer`
 
-A render-prop component for inline reactive fragments. Useful when you need signal reactivity inside a non-observer component.
+A render-prop component for inline reactive fragments.
 
-```tsx
-import { signal } from '@preact/signals-core';
-import { Observer } from '@unsignal/react';
+```ts
+import type { FunctionComponent, ReactNode } from 'react';
 
-const count = signal(0);
-
-function App() {
-  return (
-    <div>
-      <h1>Static Header</h1>
-      <Observer>{() => <p>Count: {count.value}</p>}</Observer>
-    </div>
-  );
+interface ObserverProps {
+  children: () => ReactNode;
 }
+
+const Observer: FunctionComponent<ObserverProps>;
+```
+
+### `Show`
+
+Conditionally renders `when` or `fallback` with reactive signal tracking.
+
+```ts
+import type { ReactNode } from 'react';
+import type { ReadonlySignal } from '@preact/signals-core';
+
+interface ShowProps<T> {
+  when: ReadonlySignal<T> | T;
+  fallback?: ReactNode;
+  children: (value: T) => ReactNode;
+}
+
+function Show<T>(props: ShowProps<T>): ReactNode;
+```
+
+### `For`
+
+Renders a reactive list from a signal-backed collection with keyed item tracking.
+
+```ts
+import type { ReactNode } from 'react';
+import type { ReadonlySignal } from '@preact/signals-core';
+
+interface ForProps<T> {
+  each: ReadonlySignal<readonly T[]> | readonly T[];
+  by?: (item: T, index: number) => React.Key;
+  fallback?: ReactNode;
+  children: (item: T, index: number) => ReactNode;
+}
+
+function For<T>(props: ForProps<T>): ReactNode;
+```
+
+### `Switch`
+
+Matches reactive cases and renders the first matching branch.
+
+```ts
+import type { ReactNode } from 'react';
+import type { ReadonlySignal } from '@preact/signals-core';
+
+interface CaseProps<T> {
+  when: ReadonlySignal<T> | T;
+  children: ReactNode | ((value: T) => ReactNode);
+}
+
+interface DefaultProps {
+  children: ReactNode;
+}
+
+interface SwitchProps<T> {
+  children: ReactNode;
+}
+
+function Switch<T>(props: SwitchProps<T>): ReactNode;
 ```
 
 ### `useSignalValue`
 
-Reads a signal's current value and subscribes to changes. No `observer` wrapper needed — triggers re-render on its own.
+Reads the current value from a signal and subscribes to changes.
 
 ```ts
+import type { ReadonlySignal } from '@preact/signals-core';
+
 function useSignalValue<T>(source: ReadonlySignal<T>): T;
-```
-
-- Accepts `ReadonlySignal` (including `computed` results)
-
-```tsx
-import { signal, computed } from '@preact/signals-core';
-import { useSignalValue } from '@unsignal/react';
-
-const count = signal(0);
-const doubled = computed(() => count.value * 2);
-
-function Counter() {
-  const value = useSignalValue(count);
-  const doubledValue = useSignalValue(doubled);
-  return (
-    <p>
-      {value} x 2 = {doubledValue}
-    </p>
-  );
-}
 ```
 
 ### `useSignalState`
 
-Read-write hook for writable signals, styled like `useState`. Integrates `immer` for ergonomic mutable-style updates on complex state.
+Read-write hook for writable signals with immer-powered mutation support.
 
 ```ts
+import type { Signal } from '@preact/signals-core';
+
 type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 
 function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 ```
 
-- Only accepts writable `Signal` (not `ReadonlySignal` / `computed`)
-- `Mutator` supports two styles:
-  - `(draft: T) => void` — mutable style for objects/arrays (powered by immer)
-  - `(draft: T) => T` — return new value, for primitives
+- For primitives, pass a new value or `(prev) => next`
+- For objects and arrays, pass an immer producer
 
-**Primitives — must return a new value:**
+### `useSignalEffect`
 
-```tsx
-import { signal } from '@preact/signals-core';
-import { useSignalState } from '@unsignal/react';
+Runs a side effect that automatically tracks signal dependencies and supports cleanup.
 
-const count = signal(0);
+```ts
+import type { EffectOptions } from '@preact/signals-core';
 
-function Counter() {
-  const [value, mutate] = useSignalState(count);
-  return (
-    <div>
-      <p>{value}</p>
-      <button onClick={() => mutate((v) => v + 1)}>+1</button>
-    </div>
-  );
-}
+function useSignalEffect(callback: () => void | (() => void), options?: EffectOptions): void;
 ```
 
-**Objects / arrays — mutable style (immer):**
+### `useLiveSignal`
 
-```tsx
-import { signal } from '@preact/signals-core';
-import { useSignalState } from '@unsignal/react';
+Bridges a React-owned value into a readonly signal.
 
-const todos = signal<{ id: number; text: string; done: boolean }[]>([]);
+```ts
+import type { ReadonlySignal } from '@preact/signals-core';
 
-function TodoList() {
-  const [items, mutate] = useSignalState(todos);
-
-  const onToggle = (id: number) => {
-    mutate((draft) => {
-      const todo = draft.find((t) => t.id === id);
-      if (todo) todo.done = !todo.done;
-    });
-  };
-
-  return (
-    <ul>
-      {items.map((item) => (
-        <li key={item.id} onClick={() => onToggle(item.id)}>
-          {item.text}
-        </li>
-      ))}
-    </ul>
-  );
+interface UseLiveSignalOptions<T> {
+  equals?: (previous: T, next: T) => boolean;
 }
+
+function useLiveSignal<T>(value: T, options?: UseLiveSignalOptions<T>): ReadonlySignal<T>;
 ```
 
 ## License

@@ -1,6 +1,6 @@
 # @unsignal/core
 
-Framework-agnostic reactive utilities which extend [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
+Framework-agnostic reactive utilities that extend [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
 
 ## Installation
 
@@ -14,23 +14,17 @@ pnpm add @unsignal/core
 
 ### `reaction(fn, callback)`
 
+Track signal dependencies in `fn` and invoke `callback` when they change.
+
 ```ts
-/**
- * Track signal dependencies in `fn` and invoke `callback` when they change.
- *
- * - `fn` behaves identically to `effect(fn)`: executes immediately, auto-tracks
- *   signal deps, and re-executes when those deps change.
- * - `callback` is invoked only on dependency changes — skipped on the first run.
- *   Runs untracked, so reads inside it do NOT create dependencies.
- *
- * @param fn - Tracking function executed immediately and on each dep change.
- * @param callback - Callback invoked on dep changes (not on first run), untracked.
- * @returns A `DisposerFn` to stop tracking and clean up the effect.
- */
+import type { DisposerFn } from '@unsignal/core';
+
 function reaction(fn: () => void, callback: () => void): DisposerFn;
 ```
 
-#### Example
+- `fn` behaves like `effect(fn)`: it executes immediately, auto-tracks signal dependencies, and re-executes when those dependencies change
+- `callback` runs only on dependency changes, not on the initial execution
+- `callback` runs untracked, so reads inside it do not create dependencies
 
 ```ts
 import { signal } from '@preact/signals-core';
@@ -39,16 +33,91 @@ import { reaction } from '@unsignal/core';
 const count = signal(0);
 
 const dispose = reaction(
-  () => console.log('count:', count.value),
-  () => console.log('changed!')
+  () => {
+    console.log('count is:', count.value);
+  },
+  () => {
+    console.log('count changed!');
+  }
 );
-// logs: "count: 0" (callback NOT invoked)
 
 count.value = 1;
-// logs: "count: 1", "changed!"
 
 dispose();
-count.value = 2; // no output
+```
+
+### `watchEffect(fn)`
+
+Run a side effect that tracks signal dependencies and supports cleanup.
+
+```ts
+import type { DisposerFn, OnCleanup } from '@unsignal/core';
+
+function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn;
+```
+
+- Executes immediately
+- Re-runs when tracked dependencies change
+- Calls cleanup before the next run and on disposal
+
+```ts
+import { signal } from '@preact/signals-core';
+import { watchEffect } from '@unsignal/core';
+
+const userId = signal(1);
+
+const dispose = watchEffect((onCleanup) => {
+  const controller = new AbortController();
+
+  fetch(`/api/users/${userId.value}`, { signal: controller.signal });
+
+  onCleanup(() => controller.abort());
+});
+
+dispose();
+```
+
+### `watch(source, callback, options?)`
+
+Watch a signal or getter and run a callback when the value changes.
+
+```ts
+import type { ReadonlySignal } from '@preact/signals-core';
+import type { DisposerFn, OnCleanup } from '@unsignal/core';
+
+type WatchCallback<T> = (value: T, oldValue: T, onCleanup: OnCleanup) => void;
+
+interface WatchOptions {
+  immediate?: boolean;
+}
+
+function watch<T>(
+  source: ReadonlySignal<T> | (() => T),
+  callback: WatchCallback<T>,
+  options?: WatchOptions
+): DisposerFn;
+```
+
+- Supports both `ReadonlySignal<T>` and getter sources
+- Lazy by default
+- Supports `immediate: true`
+- Uses `Object.is` for change detection
+
+```ts
+import { signal } from '@preact/signals-core';
+import { watch } from '@unsignal/core';
+
+const count = signal(0);
+
+const dispose = watch(
+  () => count.value,
+  (value, oldValue) => {
+    console.log(`${oldValue} -> ${value}`);
+  }
+);
+
+count.value = 1;
+dispose();
 ```
 
 ## License
