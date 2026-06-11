@@ -1,30 +1,30 @@
 # @unsignal/vue
 
-## 业务目标
+## Business Objective
 
-提供类似于 [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master) 风格的 `@preact/signals-core` 响应式桥接能力
+Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-style `@preact/signals-core` reactive bridging capabilities
 
-## 业务指标
+## Business Requirements
 
-- 支持 `Vue 3` 版本，**明确不兼容低版本!!!**
-- 支持 `SSR` 模式
-- 类型 `Typescript` 声明完备
+- Support `Vue 3`, **explicitly incompatible with lower versions!!!**
+- Support `SSR` mode
+- Complete `TypeScript` type declarations
 
-## 业务设计
+## Business Design
 
-### 设计原则
+### Design Principles
 
-- 将 `@preact/signals-core` 的 `Signal` 桥接为 `Vue 3` 响应式系统可识别的 `ShallowRef`，使 `Signal` 在模板、`watch`、`computed` 等场景中无缝使用
-- 功能聚焦互补，不重复 `@preact/signals-core` 已有的基础原语（`signal` / `computed` / `effect`），`API` 不进行重导出
-- 仅使用 `@preact/signals-core` 公开 API（`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`），**禁止使用未公开的 `subscribe()` 方法**
-- 使用 `effect()` 实现 Signal → Vue 响应式系统的桥接：在 `effect` 回调中读取 `signal.value` 建立依赖追踪，信号变化时 `effect` 自动重新执行，将新值同步到 `shallowRef`
-- 自动管理所有 `signal` 订阅，通过 `onScopeDispose` 调用 `effect()` 返回的 `dispose` 函数清理，避免内存泄漏
+- Bridge `@preact/signals-core`'s `Signal` into a `ShallowRef` recognizable by the `Vue 3` reactive system, enabling seamless usage of `Signal` in templates, `watch`, `computed`, and other scenarios
+- Focused complementary functionality, without duplicating `@preact/signals-core`'s existing primitives (`signal` / `computed` / `effect`); `APIs` are not re-exported
+- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of the non-public `subscribe()` method is strictly prohibited**
+- Use `effect()` to implement Signal → Vue reactive system bridging: read `signal.value` inside the `effect` callback to establish dependency tracking; when the signal changes, `effect` automatically re-executes and syncs the new value to `shallowRef`
+- All `signal` subscriptions are automatically managed, cleaned up via the `dispose` function returned by `effect()` through `onScopeDispose`, preventing memory leaks
 
 ### API Reference
 
 #### `useSignalValue`
 
-将 `Signal<T>` 桥接为 `Readonly ShallowRef<T>`。自动追踪 `signal` 变化并同步到 `Vue` 响应式系统
+Bridges `Signal<T>` into a `Readonly ShallowRef<T>`. Automatically tracks `signal` changes and syncs them to the `Vue` reactive system
 
 ```ts
 import type { ShallowRef } from 'vue';
@@ -33,7 +33,7 @@ import type { ReadonlySignal } from '@preact/signals-core';
 function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 ```
 
-**用法示例：**
+**Usage Example:**
 
 ```vue
 <script setup lang="ts">
@@ -55,7 +55,7 @@ const doubledValue = useSignalValue(doubled);
 
 #### `useSignalState`
 
-将可写 `Signal<T>` 桥接为 `Vue` 只读 `ShallowRef<T>`，提供读写能力。内部集成 `immer` 支持可变式更新，`immer` 为必选 `peerDependency`
+Bridges a writable `Signal<T>` into a `Vue` readonly `ShallowRef<T>`, providing read-write capabilities. Internally integrates `immer` to support mutable-style updates; `immer` is a required `peerDependency`
 
 ```ts
 import type { ShallowRef } from 'vue';
@@ -66,16 +66,16 @@ type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 function useSignalState<T>(source: Signal<T>): [Readonly<ShallowRef<T>>, Mutator<T>];
 ```
 
-**行为说明：**
+**Behavior:**
 
-- `Mutator` 支持两种写法：
-  - `(draft: T) => void`：可变式，适用于对象 / 数组，内部自动生成不可变值
-  - `(draft: T) => T`：返回新值，适用于原始类型（`number` / `string` / `boolean` 等）
-- 组件卸载时自动清理 `signal` 订阅
+- `Mutator` supports two styles:
+  - `(draft: T) => void`: mutable style, suitable for objects / arrays, internally generates immutable values automatically
+  - `(draft: T) => T`: returns a new value, suitable for primitive types (`number` / `string` / `boolean`, etc.)
+- Automatically cleans up `signal` subscriptions when the component is unmounted
 
-**用法示例：**
+**Usage Example:**
 
-**原始类型，必须显式返回新值：**
+**Primitive types — must explicitly return a new value:**
 
 ```vue
 <script setup lang="ts">
@@ -92,7 +92,7 @@ const [value, mutate] = useSignalState(count);
 </template>
 ```
 
-**对象 / 数组，使用可变式写法（`void`）：**
+**Objects / arrays — use mutable style (`void`):**
 
 ```vue
 <script setup lang="ts">
@@ -127,7 +127,7 @@ function onToggle(id: number) {
 
 #### SignalPlugin
 
-实现 `Vue` 插件，全局注册后 `Observer` 组件可全局使用，无需逐文件导入
+Implements a `Vue` plugin. After global registration, the `Observer` component is available globally without per-file imports
 
 ```ts
 import type { Plugin as VuePlugin } from 'vue';
@@ -137,11 +137,11 @@ export const SignalPlugin: VuePlugin;
 
 #### `Observer`
 
-无渲染 `Vue` 组件，将默认插槽包装为响应式渲染片段。插槽内读取的 `signal` 变化时仅触发该片段重渲染，不影响父组件
+Renderless `Vue` component that wraps the default slot into a reactive rendering fragment. When `signal` reads inside the slot change, only that fragment re-renders, without affecting the parent component
 
-**用法示例：**
+**Usage Example:**
 
-**局部注册：**
+**Local registration:**
 
 ```vue
 <script setup lang="ts">
@@ -162,7 +162,7 @@ const count = signal(0);
 </template>
 ```
 
-**全局插件注册：**
+**Global plugin registration:**
 
 ```ts
 import { createApp } from 'vue';
@@ -175,9 +175,9 @@ app.use(SignalPlugin);
 app.mount('#app');
 ```
 
-### Vue 响应式系统集成
+### Vue Reactive System Integration
 
-`useSignalValue` 返回的 `ShallowRef` 可与 `Vue` 生态无缝协作：
+The `ShallowRef` returned by `useSignalValue` integrates seamlessly with the `Vue` ecosystem:
 
 ```ts
 import { watch, computed as vueComputed } from 'vue';
@@ -186,14 +186,14 @@ import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
 
-// 在 setup 中使用
+// Use in setup
 const value = useSignalValue(count);
 
-// 配合 Vue watch
+// Works with Vue watch
 watch(value, (newVal) => {
   console.log('count changed:', newVal);
 });
 
-// 配合 Vue computed
+// Works with Vue computed
 const label = vueComputed(() => `Count is ${value.value}`);
 ```

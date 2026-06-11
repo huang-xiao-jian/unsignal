@@ -1,30 +1,30 @@
 # @unsignal/react
 
-## 业务目标
+## Business Objective
 
-提供类似于 [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite) 风格的 `@preact/signals-core` 响应式桥接能力
+Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite)-style `@preact/signals-core` reactive bridging capabilities
 
-## 业务指标
+## Business Requirements
 
-- 支持 `React 19+` 版本，**明确不兼容低版本!!!**
-- 支持 `SSR` 模式（业务方需要主动开启）
-- 支持 `Function Component`，明确不支持 `Class Component`
-- 不支持废弃特性，包括：`forwardRef` / `contextTypes`
-- 类型 `Typescript` 声明完备
+- Support `React 19+`, **explicitly incompatible with lower versions!!!**
+- Support `SSR` mode (must be explicitly enabled by consumers)
+- Support `Function Component`, explicitly does not support `Class Component`
+- Does not support deprecated features, including: `forwardRef` / `contextTypes`
+- Complete `TypeScript` type declarations
 
-## 业务设计
+## Business Design
 
-### 设计原则
+### Design Principles
 
-- 功能与 `@preact/signals-react` 互补，不重复其已有 API（`useSignal` / `useComputed` / `useSignalEffect` / `useSignals`），API 不进行重导出
-- 仅使用 `@preact/signals-core` 公开 API（`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`），**禁止使用未公开的方法！**
-- `observer` 实现基于 `React.useSyncExternalStore` + `effect()` 依赖追踪：使用 `useSyncExternalStore` 订阅外部信号变化，`effect()` 在渲染阶段自动追踪组件读取的 `signal` 依赖，信号变化时触发重渲染
+- Functionality complements `@preact/signals-react`, without duplicating its existing APIs (`useSignal` / `useComputed` / `useSignalEffect` / `useSignals`); APIs are not re-exported
+- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
+- `observer` implementation is based on `React.useSyncExternalStore` + `effect()` dependency tracking: uses `useSyncExternalStore` to subscribe to external signal changes, `effect()` automatically tracks `signal` dependencies read by the component during the render phase, and signal changes trigger re-renders
 
 ### API Reference
 
 #### `observer`
 
-将 `Function Component` 包装为响应式组件。渲染时自动追踪组件内读取的 `signal`，任一 `signal` 变化触发重渲染
+Wraps a `Function Component` into a reactive component. Automatically tracks `signal` reads within the component during rendering; any `signal` change triggers a re-render
 
 ```ts
 interface ObserverOptions {
@@ -37,13 +37,13 @@ function observer<P extends object>(
 ): FunctionComponent<P>;
 ```
 
-**行为说明：**
+**Behavior:**
 
-- 渲染阶段自动收集组件函数体内读取的 `signal` 依赖，追踪 `signal` 变化时触发组件重渲染
-- 内部使用 `useSyncExternalStore` 订阅信号变化，天然支持 `React 19` 并发模式（`Concurrent Mode`）
-- 自动 `memoization` 用以提高性能，`observer` 包装后的组件默认行为等价于 `React.memo`
+- Automatically collects `signal` dependencies read within the component function body during the render phase; tracks `signal` changes to trigger component re-renders
+- Internally uses `useSyncExternalStore` to subscribe to signal changes, natively supports `React 19` concurrent mode (`Concurrent Mode`)
+- Automatic `memoization` for performance; the default behavior of `observer`-wrapped components is equivalent to `React.memo`
 
-**用法示例：**
+**Usage Example:**
 
 ```tsx
 import { signal } from '@preact/signals-core';
@@ -58,7 +58,7 @@ const Counter = observer(function Counter() {
 
 #### `Observer`
 
-`Render prop` 组件，用于在组件树中内联响应式渲染片段，适用于需要在非 `observer wrapped` 组件中局部使用 `signal` 的场景
+`Render prop` component for inline reactive rendering fragments within the component tree. Suitable for scenarios where `signal` needs to be used locally in a non-`observer wrapped` component
 
 ```ts
 interface ObserverProps {
@@ -68,7 +68,7 @@ interface ObserverProps {
 const Observer: FunctionComponent<ObserverProps>;
 ```
 
-**用法示例：**
+**Usage Example:**
 
 ```tsx
 import { signal } from '@preact/signals-core';
@@ -88,7 +88,7 @@ function App() {
 
 #### `useSignalValue`
 
-用于从外部 `Signal` 读取当前值并订阅变化。无需 `observer` 包装，单独使用即可实现响应式重渲染
+Reads the current value from an external `Signal` and subscribes to changes. No `observer` wrapping needed — reactive re-rendering works standalone
 
 ```ts
 import type { ReadonlySignal } from '@preact/signals-core';
@@ -96,11 +96,11 @@ import type { ReadonlySignal } from '@preact/signals-core';
 function useSignalValue<T>(signal: ReadonlySignal<T>): T;
 ```
 
-**行为说明：**
+**Behavior:**
 
-- 支持 `ReadonlySignal`（包括 `computed` 返回值）
+- Supports `ReadonlySignal` (including `computed` return values)
 
-**用法示例：**
+**Usage Example:**
 
 ```tsx
 import { signal, computed } from '@preact/signals-core';
@@ -122,7 +122,7 @@ function Counter() {
 
 #### `useSignalState`
 
-用于读写外部可写 `Signal`，API 风格类似 `useState`。内部集成 `immer` 支持可变式更新，简化复杂状态的更新负担`immer` 为必选 `peerDependency`。
+Reads and writes an external writable `Signal`, with an API style similar to `useState`. Internally integrates `immer` to support mutable-style updates, simplifying complex state updates. `immer` is a required `peerDependency`.
 
 ```ts
 type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
@@ -130,17 +130,17 @@ type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 ```
 
-**行为说明：**
+**Behavior:**
 
-- 外部通过 `Mutator` 函数修改
-- 仅支持可写 `Signal`，不支持 `ReadonlySignal`（如 `computed` 返回值）
-- `immer` 为必选 `peerDependency`，`Mutator` 支持两种写法：
-  - `(draft: T) => void`：可变式，适用于对象 / 数组，内部自动生成不可变值
-  - `(draft: T) => T`：返回新值，适用于原始类型（`number` / `string` / `boolean` 等）
+- External mutation via the `Mutator` function
+- Only supports writable `Signal`, does not support `ReadonlySignal` (e.g., `computed` return values)
+- `immer` is a required `peerDependency`; `Mutator` supports two styles:
+  - `(draft: T) => void`: mutable style, suitable for objects / arrays, internally generates immutable values automatically
+  - `(draft: T) => T`: returns a new value, suitable for primitive types (`number` / `string` / `boolean`, etc.)
 
-**用法示例：**
+**Usage Example:**
 
-**原始类型，必须显式返回新值：**
+**Primitive types — must explicitly return a new value:**
 
 ```tsx
 import { signal } from '@preact/signals-core';
@@ -159,7 +159,7 @@ function Counter() {
 }
 ```
 
-**对象 / 数组，使用可变式写法（`void`）：**
+**Objects / arrays — use mutable style (`void`):**
 
 ```tsx
 import { signal } from '@preact/signals-core';
@@ -177,7 +177,7 @@ function TodoList() {
   const [items, mutate] = useSignalState(todos);
 
   const onToggle = (id: number) => {
-    // immer producer：可变式写法，内部自动生成不可变值
+    // immer producer: mutable style, internally generates immutable values automatically
     mutate((draft) => {
       const todo = draft.find((t) => t.id === id);
       if (todo) todo.done = !todo.done;
