@@ -45,6 +45,17 @@ function observer<P extends object>(
 ): FunctionComponent<P>;
 ```
 
+```tsx
+import { signal } from '@preact/signals-core';
+import { observer } from '@unsignal/react';
+
+const count = signal(0);
+
+const Counter = observer(function Counter() {
+  return <p>Count: {count.value}</p>;
+});
+```
+
 ### `Observer`
 
 A render-prop component for inline reactive fragments.
@@ -57,6 +68,22 @@ interface ObserverProps {
 }
 
 const Observer: FunctionComponent<ObserverProps>;
+```
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { Observer } from '@unsignal/react';
+
+const count = signal(0);
+
+function App() {
+  return (
+    <div>
+      <h1>Static Header</h1>
+      <Observer>{() => <p>Count: {count.value}</p>}</Observer>
+    </div>
+  );
+}
 ```
 
 ### `Show`
@@ -76,6 +103,21 @@ interface ShowProps<T> {
 function Show<T>(props: ShowProps<T>): ReactNode;
 ```
 
+```tsx
+import { signal } from '@preact/signals-core';
+import { Show } from '@unsignal/react';
+
+const visible = signal(false);
+
+function App() {
+  return (
+    <Show when={visible} fallback={<p>Hidden!</p>}>
+      {() => <p>Visible!</p>}
+    </Show>
+  );
+}
+```
+
 ### `For`
 
 Renders a reactive list from a signal-backed collection with keyed item tracking.
@@ -92,6 +134,33 @@ interface ForProps<T> {
 }
 
 function For<T>(props: ForProps<T>): ReactNode;
+```
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { For } from '@unsignal/react';
+
+interface Todo {
+  id: number;
+  text: string;
+  done: boolean;
+}
+
+const todos = signal<Todo[]>([]);
+
+function TodoList() {
+  return (
+    <ul>
+      <For each={todos} by={(todo) => todo.id} fallback={<li>No todos yet.</li>}>
+        {(todo) => (
+          <li>
+            {todo.text} {todo.done ? '⚡️' : '📦️'}
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+}
 ```
 
 ### `Switch`
@@ -118,6 +187,85 @@ interface SwitchProps<T> {
 function Switch<T>(props: SwitchProps<T>): ReactNode;
 ```
 
+**Static children:**
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { Switch } from '@unsignal/react';
+
+type Status = 'loading' | 'success' | 'error';
+
+const status = signal<Status>('loading');
+
+function DataView() {
+  return (
+    <Switch when={status}>
+      <Switch.Case is="loading">
+        <p>Loading…</p>
+      </Switch.Case>
+      <Switch.Case is="success">
+        <p>Data loaded!</p>
+      </Switch.Case>
+      <Switch.Case is="error">
+        <p>Something went wrong.</p>
+      </Switch.Case>
+      <Switch.Default>
+        <p>Unknown status</p>
+      </Switch.Default>
+    </Switch>
+  );
+}
+```
+
+**Render props:**
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { Switch } from '@unsignal/react';
+
+type Status = 'loading' | 'success' | 'error';
+
+const status = signal<Status>('loading');
+
+function DataView() {
+  return (
+    <Switch when={status}>
+      <Switch.Case is="loading">{() => <p>Loading…</p>}</Switch.Case>
+      <Switch.Case is="success">{(value) => <p>Data loaded: {value}</p>}</Switch.Case>
+      <Switch.Case is="error">{() => <p>Something went wrong.</p>}</Switch.Case>
+      <Switch.Default>{(value) => <p>Unknown status: {String(value)}</p>}</Switch.Default>
+    </Switch>
+  );
+}
+```
+
+**Custom equality:**
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { Switch } from '@unsignal/react';
+
+interface User {
+  id: number;
+  role: string;
+}
+
+const currentUser = signal<User>({ id: 1, role: 'admin' });
+
+function RoleBadge() {
+  return (
+    <Switch when={currentUser} equal={(a, b) => a.role === b.role}>
+      <Switch.Case is={{ id: 0, role: 'admin' }}>
+        {(user) => <span>Admin badge — {user.id}</span>}
+      </Switch.Case>
+      <Switch.Case is={{ id: 0, role: 'editor' }}>
+        {(user) => <span>Editor badge — {user.id}</span>}
+      </Switch.Case>
+    </Switch>
+  );
+}
+```
+
 ### `useSignalValue`
 
 Reads the current value from a signal and subscribes to changes.
@@ -126,6 +274,24 @@ Reads the current value from a signal and subscribes to changes.
 import type { ReadonlySignal } from '@preact/signals-core';
 
 function useSignalValue<T>(source: ReadonlySignal<T>): T;
+```
+
+```tsx
+import { signal, computed } from '@preact/signals-core';
+import { useSignalValue } from '@unsignal/react';
+
+const count = signal(0);
+const doubled = computed(() => count.value * 2);
+
+function Counter() {
+  const value = useSignalValue(count);
+  const doubledValue = useSignalValue(doubled);
+  return (
+    <p>
+      {value} x 2 = {doubledValue}
+    </p>
+  );
+}
 ```
 
 ### `useSignalState`
@@ -143,6 +309,61 @@ function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 - For primitives, pass a new value or `(prev) => next`
 - For objects and arrays, pass an immer producer
 
+**Primitive types:**
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { useSignalState } from '@unsignal/react';
+
+const count = signal(0);
+
+function Counter() {
+  const [value, mutate] = useSignalState(count);
+  return (
+    <div>
+      <p>{value}</p>
+      <button onClick={() => mutate((v) => v + 1)}>+1</button>
+    </div>
+  );
+}
+```
+
+**Objects / arrays with immer:**
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { useSignalState } from '@unsignal/react';
+
+interface Todo {
+  id: number;
+  text: string;
+  done: boolean;
+}
+
+const todos = signal<Todo[]>([]);
+
+function TodoList() {
+  const [items, mutate] = useSignalState(todos);
+
+  const onToggle = (id: number) => {
+    mutate((draft) => {
+      const todo = draft.find((t) => t.id === id);
+      if (todo) todo.done = !todo.done;
+    });
+  };
+
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id} onClick={() => onToggle(item.id)}>
+          {item.text} {item.done ? '⚡️' : '📦️'}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
 ### `useSignalEffect`
 
 Runs a side effect that automatically tracks signal dependencies and supports cleanup.
@@ -151,6 +372,23 @@ Runs a side effect that automatically tracks signal dependencies and supports cl
 import type { EffectOptions } from '@preact/signals-core';
 
 function useSignalEffect(callback: () => void | (() => void), options?: EffectOptions): void;
+```
+
+```tsx
+import { signal } from '@preact/signals-core';
+import { useSignalEffect } from '@unsignal/react';
+
+const count = signal(0);
+
+function Logger() {
+  useSignalEffect(
+    () => {
+      console.log('count changed to:', count.value);
+    },
+    { name: 'count logger' }
+  );
+  return null;
+}
 ```
 
 ### `useLiveSignal`
@@ -165,6 +403,41 @@ interface UseLiveSignalOptions<T> {
 }
 
 function useLiveSignal<T>(value: T, options?: UseLiveSignalOptions<T>): ReadonlySignal<T>;
+```
+
+```tsx
+import { useLiveSignal } from '@unsignal/react';
+import { computed } from '@preact/signals-core';
+
+interface CounterProps {
+  initialCount: number;
+}
+
+function Counter({ initialCount }: CounterProps) {
+  const countSig = useLiveSignal(initialCount);
+  const doubled = computed(() => countSig.value * 2);
+
+  return <p>{doubled.value}</p>;
+}
+```
+
+**Custom equality:**
+
+```tsx
+import { useLiveSignal } from '@unsignal/react';
+
+interface User {
+  id: number;
+  name: string;
+}
+
+function UserView({ user }: { user: User }) {
+  const userSig = useLiveSignal(user, {
+    equals: (previous, next) => previous.id === next.id,
+  });
+
+  return <p>{userSig.value.name}</p>;
+}
 ```
 
 ## License

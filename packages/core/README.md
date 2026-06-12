@@ -41,9 +41,18 @@ const dispose = reaction(
   }
 );
 
+// Initial execution: only outputs "count is: 0", callback not triggered
 count.value = 1;
+// Outputs "count is: 1"
+// Outputs "count changed!"
+
+count.value = 2;
+// Outputs "count is: 2"
+// Outputs "count changed!"
 
 dispose();
+count.value = 3;
+// No output, tracking has been stopped
 ```
 
 ### `watchEffect(fn)`
@@ -69,12 +78,21 @@ const userId = signal(1);
 const dispose = watchEffect((onCleanup) => {
   const controller = new AbortController();
 
-  fetch(`/api/users/${userId.value}`, { signal: controller.signal });
+  fetch(`/api/users/${userId.value}`, { signal: controller.signal })
+    .then((res) => res.json())
+    .then((data) => {
+      // Handle data
+    });
 
+  // Register cleanup: cancel request before next re-execution or on dispose
   onCleanup(() => controller.abort());
 });
 
+userId.value = 2;
+// Previous request is aborted, new request is initiated
+
 dispose();
+// Current request is aborted
 ```
 
 ### `watch(source, callback, options?)`
@@ -116,7 +134,90 @@ const dispose = watch(
   }
 );
 
+// No output on creation (lazy by default)
 count.value = 1;
+// Outputs "0 -> 1"
+
+count.value = 2;
+// Outputs "1 -> 2"
+
+dispose();
+count.value = 3;
+// No output, tracking has been stopped
+```
+
+**Watching a `ReadonlySignal`:**
+
+```ts
+import { signal, computed } from '@preact/signals-core';
+import { watch } from '@unsignal/core';
+
+const count = signal(0);
+const doubled = computed(() => count.value * 2);
+
+const dispose = watch(doubled, (value, oldValue) => {
+  console.log(`doubled: ${oldValue} -> ${value}`);
+});
+
+count.value = 1;
+// Outputs "doubled: 0 -> 2"
+
+count.value = 2;
+// Outputs "doubled: 2 -> 4"
+
+dispose();
+```
+
+**Async task cleanup with `watch`:**
+
+```ts
+import { signal } from '@preact/signals-core';
+import { watch } from '@unsignal/core';
+
+const userId = signal(1);
+
+const dispose = watch(
+  () => userId.value,
+  (id, _oldId, onCleanup) => {
+    const controller = new AbortController();
+
+    fetch(`/api/users/${id}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        // Handle data
+      });
+
+    onCleanup(() => controller.abort());
+  }
+);
+
+userId.value = 2;
+// Previous request is aborted, new request is initiated
+
+dispose();
+// Current request is aborted
+```
+
+**Using the `immediate` option:**
+
+```ts
+import { signal } from '@preact/signals-core';
+import { watch } from '@unsignal/core';
+
+const count = signal(0);
+
+const dispose = watch(
+  () => count.value,
+  (value, oldValue) => {
+    console.log(`count: ${oldValue} -> ${value}`);
+  },
+  { immediate: true }
+);
+// Immediately outputs "count: undefined -> 0"
+
+count.value = 1;
+// Outputs "count: 0 -> 1"
+
 dispose();
 ```
 
