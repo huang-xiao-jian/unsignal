@@ -347,11 +347,11 @@ function App() {
 Efficiently renders a list from a signal-driven array. Each item is independently tracked — inserting, removing, or updating an item only re-renders the affected row, not the entire list.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal, Signal } from '@preact/signals-core';
 import type { ReactNode } from 'react';
 
 interface ForProps<T> {
-  each: ReadonlySignal<T[]>;
+  each: Signal<T[]> | ReadonlySignal<T[]>;
   by?: (item: T, index: number) => string | number;
   fallback?: ReactNode;
   children: (item: T, index: number) => ReactNode;
@@ -362,6 +362,7 @@ function For<T>(props: ForProps<T>): ReactNode;
 
 **Behavior:**
 
+- Accepts both writable `Signal<T[]>` and readonly `ReadonlySignal<T[]>`
 - `by` extracts a unique key for keyed reconciliation, use `index` by default
 - `fallback` is rendered when the array is empty
 - Each row is independently tracked; only affected rows re-render

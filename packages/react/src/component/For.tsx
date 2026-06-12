@@ -1,11 +1,11 @@
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal, Signal } from '@preact/signals-core';
 import type { ReactElement, ReactNode } from 'react';
 import { Fragment } from 'react';
 import { observer } from '../hoc/observer';
 import { useSignalValue } from '../hook/useSignalValue';
 
 export interface ForProps<T> {
-  each: ReadonlySignal<T[]>;
+  each: Signal<T[]> | ReadonlySignal<T[]>;
   by?: (item: T, index: number) => string | number;
   fallback?: ReactNode;
   children: (item: T, index: number) => ReactNode;

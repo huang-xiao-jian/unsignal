@@ -70,6 +70,24 @@ describe('Show', () => {
 });
 
 describe('For', () => {
+  it('should accept writable array signals as the each source', async () => {
+    const items = signal<string[]>(['A']);
+
+    render(
+      <ul>
+        <For each={items}>{(item) => <li>{item}</li>}</For>
+      </ul>
+    );
+
+    expect(screen.getByText('A')).toBeDefined();
+
+    await act(async () => {
+      items.value = ['A', 'B'];
+    });
+
+    expect(screen.getByText('B')).toBeDefined();
+  });
+
   it('should render fallback for empty arrays and rows for items', async () => {
     const items = signal<string[]>([]);
 
