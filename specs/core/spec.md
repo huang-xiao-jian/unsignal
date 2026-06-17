@@ -14,7 +14,7 @@ Extend the `@preact/signals-core` API
 ### Design Principles
 
 - Functionality complements `@preact/signals-core`, without duplicating its existing APIs (`signal` / `effect` / `computed`, etc.)
-- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
+- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek` / `createModel`), **usage of non-public methods is strictly prohibited!**
 
 ### Types
 
@@ -32,6 +32,24 @@ Utility type for registering cleanup functions, used for cleaning up side effect
 
 ```ts
 type OnCleanup = (cleanupFn: () => void) => void;
+```
+
+#### `ReadonlyModel`
+
+Utility type that transforms all `Signal<T>` properties in a `Model<TModel>` into `ReadonlySignal<T>`, recursively, while preserving methods and `ReadonlySignal` properties
+
+```ts
+type ReadonlyModel<TModel> = {
+  [Key in keyof TModel]: TModel[Key] extends ReadonlySignal<unknown>
+    ? TModel[Key]
+    : TModel[Key] extends Signal<infer U>
+      ? ReadonlySignal<U>
+      : TModel[Key] extends (...args: any[]) => any
+        ? TModel[Key]
+        : TModel[Key] extends object
+          ? ReadonlyModel<TModel[Key]>
+          : TModel[Key];
+} & DisposableLike;
 ```
 
 ### API Reference
@@ -77,6 +95,132 @@ count.value = 2;
 dispose();
 count.value = 3;
 // No output, tracking has been stopped
+```
+
+#### `readonly`
+
+```ts
+function readonly<T>(source: Signal<T>): ReadonlySignal<T>;
+function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
+```
+
+**Behavior:**
+
+- The `source` parameter: a `Signal<T>` or `ReadonlySignal<T>` instance
+- When `source` is a writable `Signal<T>`, returns a `ReadonlySignal<T>` that mirrors its value **without exposing write access**
+- When `source` is already a `ReadonlySignal<T>`, returns it as-is (no-op)
+- The returned `ReadonlySignal` automatically stays in sync with `source` via reactive tracking
+
+**Usage Example: Expose a signal as read-only**
+
+```ts
+import { signal } from '@preact/signals-core';
+import { readonly } from '@unsignal/core';
+
+const count = signal(0);
+const ro = readonly(count);
+
+console.log(ro.value); // 0
+
+count.value = 1;
+console.log(ro.value); // 1
+
+// ro.value = 2; // Type error: cannot assign to a readonly signal
+```
+
+**Usage Example: No-op on `ReadonlySignal`**
+
+```ts
+import { signal, computed } from '@preact/signals-core';
+import { readonly } from '@unsignal/core';
+
+const count = signal(0);
+const doubled = computed(() => count.value * 2);
+
+const ro = readonly(doubled);
+// ro === doubled, returned as-is
+```
+
+#### `createReadonlyModel`
+
+```ts
+type ReadonlyModelConstructor<TModel, TFactoryArgs extends any[] = []> = new (
+  ...args: TFactoryArgs
+) => ReadonlyModel<TModel>;
+
+function createReadonlyModel<TModel, TFactoryArgs extends any[] = []>(
+  modelFactory: ModelFactory<TModel, TFactoryArgs>
+): ReadonlyModelConstructor<TModel, TFactoryArgs>;
+```
+
+**Motivation:**
+
+In OO-style state management (like MobX), reactive properties are exposed directly on the model for view binding. This creates a problem — external code can mutate them at any time, bypassing the model's methods:
+
+```ts
+// Problem: count is exposed for view binding, but also writable from anywhere
+const CounterModel = createModel(() => {
+  const count = signal(0);
+  return {
+    count,
+    increment() {
+      count.value++;
+    },
+  };
+});
+
+const counter = new CounterModel();
+counter.count.value = 999; // Allowed — bypasses increment, breaks encapsulation
+```
+
+`createReadonlyModel` solves this by wrapping every `Signal<T>` property with `readonly()`. The view can still bind to reactive properties, but mutations are sealed inside the model's methods:
+
+```ts
+const counter = new CounterModel();
+// counter.count.value = 999; // Type error
+counter.increment(); // Mutation goes through the designated method
+```
+
+**Behavior:**
+
+- Same factory contract as `createModel`; all `Signal<T>` properties on the instance are wrapped with `readonly()` — external code cannot mutate them directly, mutations must go through methods
+
+**Usage Example: Encapsulate mutations inside model methods**
+
+```ts
+import { signal, computed } from '@preact/signals-core';
+import { createReadonlyModel } from '@unsignal/core';
+
+const CounterModel = createReadonlyModel((initial = 0) => {
+  const count = signal(initial);
+  const doubled = computed(() => count.value * 2);
+
+  return {
+    count,
+    doubled,
+    increment() {
+      count.value++;
+    },
+    reset() {
+      count.value = initial;
+    },
+  };
+});
+
+const counter = new CounterModel(5);
+
+console.log(counter.count.value); // 5 — readable
+console.log(counter.doubled.value); // 10 — readable
+
+// counter.count.value = 99; // Type error: cannot assign to a readonly signal
+
+counter.increment();
+console.log(counter.count.value); // 6
+
+counter.reset();
+console.log(counter.count.value); // 5
+
+counter[Symbol.dispose]();
 ```
 
 #### `watchEffect`
