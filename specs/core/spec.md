@@ -36,10 +36,10 @@ type OnCleanup = (cleanupFn: () => void) => void;
 
 #### `ReadonlyModel`
 
-Utility type that transforms all `Signal<T>` properties in a `Model<TModel>` into `ReadonlySignal<T>`, recursively, while preserving methods and `ReadonlySignal` properties
+Utility type that transforms all `Signal<T>` properties in a `Model<TModel>` into `ReadonlySignal<T>`, recursively, while preserving methods and `ReadonlySignal` properties. The disposal contract is inherited from the original `Model<TModel>` type.
 
 ```ts
-type ReadonlyModel<TModel> = {
+type ReadonlyModelFields<TModel> = {
   [Key in keyof TModel]: TModel[Key] extends ReadonlySignal<unknown>
     ? TModel[Key]
     : TModel[Key] extends Signal<infer U>
@@ -49,7 +49,9 @@ type ReadonlyModel<TModel> = {
         : TModel[Key] extends object
           ? ReadonlyModel<TModel[Key]>
           : TModel[Key];
-} & DisposableLike;
+};
+
+type ReadonlyModel<TModel> = Omit<Model<TModel>, keyof TModel> & ReadonlyModelFields<TModel>;
 ```
 
 ### API Reference
@@ -107,8 +109,8 @@ function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
 **Behavior:**
 
 - The `source` parameter: a `Signal<T>` or `ReadonlySignal<T>` instance
-- When `source` is a writable `Signal<T>`, returns a `ReadonlySignal<T>` that mirrors its value **without exposing write access**
-- When `source` is already a `ReadonlySignal<T>`, returns it as-is (no-op)
+- Returns a new `ReadonlySignal<T>` created via reactive derivation from `source.value`
+- When `source` is already a `ReadonlySignal<T>`, the returned value still mirrors `source`, but it is a new derived wrapper rather than the original instance
 - The returned `ReadonlySignal` automatically stays in sync with `source` via reactive tracking
 
 **Usage Example: Expose a signal as read-only**
@@ -128,7 +130,7 @@ console.log(ro.value); // 1
 // ro.value = 2; // Type error: cannot assign to a readonly signal
 ```
 
-**Usage Example: No-op on `ReadonlySignal`**
+**Usage Example: Wrap an existing `ReadonlySignal`**
 
 ```ts
 import { signal, computed } from '@preact/signals-core';
@@ -138,7 +140,7 @@ const count = signal(0);
 const doubled = computed(() => count.value * 2);
 
 const ro = readonly(doubled);
-// ro === doubled, returned as-is
+// ro !== doubled, but always mirrors doubled.value
 ```
 
 #### `createReadonlyModel`
@@ -173,19 +175,22 @@ const counter = new CounterModel();
 counter.count.value = 999; // Allowed — bypasses increment, breaks encapsulation
 ```
 
-`createReadonlyModel` solves this by wrapping every `Signal<T>` property with `readonly()`. The view can still bind to reactive properties, but mutations are sealed inside the model's methods:
+`createReadonlyModel` addresses this at the type level by exposing the model instance as `ReadonlyModel<TModel>`. This keeps the runtime behavior of `createModel`, while providing a readonly API surface to TypeScript consumers:
 
 ```ts
 const counter = new CounterModel();
 // counter.count.value = 999; // Type error
-counter.increment(); // Mutation goes through the designated method
+counter.increment(); // Intended mutation path in consuming code
 ```
 
 **Behavior:**
 
-- Same factory contract as `createModel`; all `Signal<T>` properties on the instance are wrapped with `readonly()` — external code cannot mutate them directly, mutations must go through methods
+- Same factory contract and runtime behavior as `createModel`
+- Returns the original runtime model instance shape; signal properties are **not** wrapped or replaced at runtime
+- Exposes a readonly API surface through `ReadonlyModel<TModel>` typing, so `Signal<T>` properties appear as `ReadonlySignal<T>` to TypeScript consumers
+- This is a compile-time contract, not a runtime mutation seal
 
-**Usage Example: Encapsulate mutations inside model methods**
+**Usage Example: Expose a readonly model surface to TypeScript**
 
 ```ts
 import { signal, computed } from '@preact/signals-core';
@@ -212,7 +217,7 @@ const counter = new CounterModel(5);
 console.log(counter.count.value); // 5 — readable
 console.log(counter.doubled.value); // 10 — readable
 
-// counter.count.value = 99; // Type error: cannot assign to a readonly signal
+// counter.count.value = 99; // Type error in TypeScript
 
 counter.increment();
 console.log(counter.count.value); // 6

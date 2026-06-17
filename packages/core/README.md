@@ -12,6 +12,110 @@ pnpm add @unsignal/core
 
 ## API
 
+### `readonly(source)`
+
+Create a derived read-only signal from a writable or read-only source signal.
+
+```ts
+import type { ReadonlySignal, Signal } from '@preact/signals-core';
+
+function readonly<T>(source: Signal<T>): ReadonlySignal<T>;
+function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
+```
+
+- Always returns a new derived `ReadonlySignal<T>`
+- Stays in sync with `source.value` through reactive tracking
+- When the source is already a `ReadonlySignal<T>`, the result still mirrors it but is not the same instance
+
+```ts
+import { computed, signal } from '@preact/signals-core';
+import { readonly } from '@unsignal/core';
+
+const count = signal(1);
+const countView = readonly(count);
+
+count.value = 2;
+console.log(countView.value); // 2
+
+const doubled = computed(() => count.value * 2);
+const doubledView = readonly(doubled);
+
+console.log(doubledView === doubled); // false
+console.log(doubledView.value); // 4
+```
+
+### `ReadonlyModel<TModel>`
+
+Utility type that recursively maps `Signal<T>` properties in a model to `ReadonlySignal<T>`, while preserving methods, nested objects, existing `ReadonlySignal`s, and the original model disposal contract.
+
+```ts
+import type { Model, ReadonlySignal, Signal } from '@preact/signals-core';
+
+type ReadonlyModelFields<TModel> = {
+  [Key in keyof TModel]: TModel[Key] extends ReadonlySignal<unknown>
+    ? TModel[Key]
+    : TModel[Key] extends Signal<infer U>
+      ? ReadonlySignal<U>
+      : TModel[Key] extends (...args: any[]) => any
+        ? TModel[Key]
+        : TModel[Key] extends object
+          ? ReadonlyModel<TModel[Key]>
+          : TModel[Key];
+};
+
+type ReadonlyModel<TModel> = Omit<Model<TModel>, keyof TModel> & ReadonlyModelFields<TModel>;
+```
+
+### `createReadonlyModel(factory)`
+
+Create a model constructor with a readonly TypeScript surface for signal properties.
+
+```ts
+import type { ModelFactory } from '@preact/signals-core';
+
+type ReadonlyModelConstructor<TModel, TFactoryArgs extends any[] = []> = new (
+  ...args: TFactoryArgs
+) => ReadonlyModel<TModel>;
+
+function createReadonlyModel<TModel, TFactoryArgs extends any[] = []>(
+  modelFactory: ModelFactory<TModel, TFactoryArgs>
+): ReadonlyModelConstructor<TModel, TFactoryArgs>;
+```
+
+- Uses the same runtime behavior as `createModel`
+- Returns the original runtime model instance shape
+- Does not wrap or replace runtime signal objects
+- Exposes `Signal<T>` properties as `ReadonlySignal<T>` to TypeScript consumers
+- Acts as a compile-time API contract, not a runtime mutation seal
+
+```ts
+import { computed, signal } from '@preact/signals-core';
+import { createReadonlyModel } from '@unsignal/core';
+
+const CounterModel = createReadonlyModel((initial = 0) => {
+  const count = signal(initial);
+  const doubled = computed(() => count.value * 2);
+
+  return {
+    count,
+    doubled,
+    increment() {
+      count.value += 1;
+    },
+  };
+});
+
+const counter = new CounterModel(1);
+
+console.log(counter.count.value); // 1
+console.log(counter.doubled.value); // 2
+
+// counter.count.value = 3; // Type error in TypeScript
+
+counter.increment();
+console.log(counter.count.value); // 2
+```
+
 ### `reaction(fn, callback)`
 
 Track signal dependencies in `fn` and invoke `callback` when they change.
