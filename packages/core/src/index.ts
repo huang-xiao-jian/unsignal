@@ -1,8 +1,19 @@
-export { reaction } from './reaction.js';
-export type { DisposerFn } from './reaction.js';
-export { createReadonlyModel, readonly } from './readonly.js';
-export type { ReadonlyModel, ReadonlyModelConstructor } from './readonly.js';
-export { watch } from './watch.js';
-export type { WatchCallback, WatchOptions } from './watch.js';
-export { watchEffect } from './watchEffect.js';
-export type { OnCleanup } from './watchEffect.js';
+export { reaction } from './reaction';
+export type { DisposerFn } from './reaction';
+export { createReadonlyModel, readonly } from './readonly';
+export type { ReadonlyModel, ReadonlyModelConstructor } from './readonly';
+export { resource } from './resource';
+export type {
+  Aborter,
+  Resource,
+  ResourceLoader,
+  ResourceLoaderParams,
+  ResourceOptions,
+  ResourceParams,
+  ResourcePrevious,
+  ResourceStatus,
+} from './resource';
+export { watch } from './watch';
+export type { WatchCallback, WatchOptions } from './watch';
+export { watchEffect } from './watchEffect';
+export type { OnCleanup } from './watchEffect';
