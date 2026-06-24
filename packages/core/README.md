@@ -116,6 +116,104 @@ counter.increment();
 console.log(counter.count.value); // 2
 ```
 
+### `resource(options)`
+
+Create a reactive async resource that loads whenever its params become defined and exposes signal-based request state.
+
+```ts
+import type { ReadonlySignal } from '@preact/signals-core';
+
+type ResourceStatus = 'idle' | 'loading' | 'reloading' | 'resolved' | 'error';
+
+interface Aborter {
+  readonly signal: AbortSignal;
+  onAbort(cleanupFn: () => void): void;
+}
+
+interface ResourcePrevious {
+  readonly status: ResourceStatus;
+}
+
+interface ResourceLoaderParams<TParams> {
+  readonly params: TParams;
+  readonly aborter: Aborter;
+  readonly previous: ResourcePrevious;
+}
+
+type ResourceLoader<TParams, TValue> = (params: ResourceLoaderParams<TParams>) => Promise<TValue>;
+
+type ResourceParams<TParams> = ReadonlySignal<TParams | undefined> | (() => TParams | undefined);
+
+interface ResourceOptions<TParams, TValue> {
+  params: ResourceParams<TParams>;
+  loader: ResourceLoader<TParams, TValue>;
+  defaultValue?: TValue;
+}
+
+interface Resource<T> {
+  readonly value: ReadonlySignal<T>;
+  readonly status: ReadonlySignal<ResourceStatus>;
+  readonly error: ReadonlySignal<unknown | undefined>;
+  readonly isLoading: ReadonlySignal<boolean>;
+  hasValue(): boolean;
+  reload(): boolean;
+  destroy(): void;
+}
+
+function resource<TParams, TValue>(
+  options: ResourceOptions<TParams, TValue> & { defaultValue: TValue }
+): Resource<TValue>;
+
+function resource<TParams, TValue>(
+  options: ResourceOptions<TParams, TValue>
+): Resource<TValue | undefined>;
+```
+
+- Starts in `idle` when `params` is `undefined`
+- Starts loading immediately when `params` becomes defined
+- Uses `loading` before the first value is available and `reloading` when a previous value is retained
+- Clears `error` before each new run
+- Ignores stale results from aborted runs
+- Resets to `defaultValue` when `params` becomes `undefined`
+- Supports manual `reload()` when params are currently defined
+- Supports `destroy()` to stop tracking and abort the active run
+
+```ts
+import { signal } from '@preact/signals-core';
+import { resource } from '@unsignal/core';
+
+const userId = signal<number | undefined>(1);
+
+const userResource = resource({
+  params: userId,
+  defaultValue: { name: 'Guest' },
+  loader: async ({ params, aborter, previous }) => {
+    console.log(previous.status);
+
+    const response = await fetch(`/api/users/${params}`, {
+      signal: aborter.signal,
+    });
+
+    aborter.onAbort(() => {
+      console.log(`request for user ${params} aborted`);
+    });
+
+    return response.json() as Promise<{ name: string }>;
+  },
+});
+
+console.log(userResource.status.value); // loading
+console.log(userResource.value.value); // { name: 'Guest' }
+
+userId.value = 2;
+console.log(userResource.status.value); // reloading
+
+const refreshed = userResource.reload();
+console.log(refreshed); // true
+
+userResource.destroy();
+```
+
 ### `reaction(fn, callback)`
 
 Track signal dependencies in `fn` and invoke `callback` when they change.
