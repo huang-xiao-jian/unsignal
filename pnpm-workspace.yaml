@@ -1,6 +1,7 @@
 packages:
   - 'packages/*'
 allowBuilds:
+  '@fission-ai/openspec': true
   esbuild: true
 overrides:
   slice-ansi@8.0.0>ansi-styles: ^6.2.3
