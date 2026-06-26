@@ -1,12 +1,7 @@
-/**
- * placeholder function test for package
- */
+import { describe, it } from 'vitest';
 
-import { describe, expect, test } from 'vitest';
-import { sum } from './index';
-
-describe('sum', () => {
-  test('should return the sum of two numbers', () => {
-    expect(sum(1, 2)).toBe(3);
+describe('baseline test suite layout', () => {
+  it('should organize primitive coverage in semantic test files', () => {
+    // Semantic coverage lives in neighboring primitive-focused suites.
   });
 });
