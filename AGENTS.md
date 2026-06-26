@@ -24,17 +24,20 @@ Extend the original `Signal Primitive` from [@preact/signals-core](https://githu
 
 The function is divided into multiple sub-packages. the prefix will be uniformly set as: `unsignal` (e.g. `@unsignal/react`)
 
-| Package           | Responsibility                  |
-| :---------------- | :------------------------------ |
-| `@unsignal/vue`   | Signal binding for Vue3         |
-| `@unsignal/react` | Signal binding for React19      |
-| `@unsignal/core`  | Signal enhancement for original |
+| Package              | Responsibility                                                |
+| :------------------- | :------------------------------------------------------------ |
+| `@unsignal/vue`      | Signal binding for Vue3                                       |
+| `@unsignal/react`    | Signal binding for React19                                    |
+| `@unsignal/core`     | Signal enhancement for original                               |
+| `@unsignal/baseline` | Signal builtin-implementation to replace @preact/signals-core |
+
+> NOTE: The `@unsignal/baseline` remains WIP state!
 
 ```mermaid
 graph TD
-    core["@unsignal/core<br/><i>Signal enhancement for original</i>"]
-    vue["@unsignal/vue<br/><i>Signal binding for Vue3</i>"]
-    react["@unsignal/react<br/><i>Signal binding for React19</i>"]
+    core["@unsignal/core"]
+    vue["@unsignal/vue"]
+    react["@unsignal/react"]
 
     vue -->|depends on| core
     react -->|depends on| core
@@ -47,8 +50,10 @@ The packages and specs follow the same structure:
     ├── vue
     └── react
     └── core
-├── specs
-│   ├── core
-│   ├── react
-│   └── vue
+    └── baseline
+└── specs
+    ├── vue
+    └── react
+    └── core
+    └── baseline
 ```
