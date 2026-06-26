@@ -1,7 +1,7 @@
 {
   "name": "@unsignal/baseline",
   "version": "1.0.1",
-  "description": "A builtin Signals Primitive to take place of @preact/signals-core",
+  "description": "Built-in primitive signal runtime for the unsignal ecosystem",
   "homepage": "https://github.com/huang-xiao-jian/unsignal#readme",
   "bugs": {
     "url": "https://github.com/huang-xiao-jian/unsignal/issues"

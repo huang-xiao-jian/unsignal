@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { computed, effect, signal, Signal } from './index';
+import { computed, effect, isReadonlySignal, isSignal, signal, Signal } from './index';
 
 describe('signal', () => {
   it('should return value', () => {
@@ -10,6 +10,10 @@ describe('signal', () => {
 
   it('should inherit from Signal', () => {
     expect(signal(0)).to.be.instanceOf(Signal);
+  });
+
+  it('should preserve the Signal constructor on the prototype chain', () => {
+    expect(Signal.prototype.constructor).toBe(Signal);
   });
 
   it('should support .toString()', () => {
@@ -257,11 +261,44 @@ describe('signal', () => {
 
   it('signals should be identified with a symbol', () => {
     const a = signal(0);
-    expect(a.brand).to.equal(Symbol.for('preact-signals'));
+    expect(a.brand).to.equal(Symbol.for('unsignal-signals'));
   });
 
   it('should be identified with a symbol', () => {
     const a = computed(() => {});
-    expect(a.brand).to.equal(Symbol.for('preact-signals'));
+    expect(a.brand).to.equal(Symbol.for('unsignal-signals'));
+  });
+
+  it('should identify writable baseline signals with isSignal', () => {
+    const a = signal(0);
+
+    expect(isSignal(a)).toBe(true);
+  });
+
+  it('should not identify computed signals as writable baseline signals', () => {
+    const a = computed(() => 1);
+
+    expect(isSignal(a)).toBe(false);
+  });
+
+  it('should identify computed signals with isReadonlySignal', () => {
+    const a = computed(() => 1);
+
+    expect(isReadonlySignal(a)).toBe(true);
+  });
+
+  it('should reject non-signal values from both guards', () => {
+    const lookalike = {
+      brand: Symbol.for('unsignal-signals'),
+      peek() {
+        return 1;
+      },
+      value: 1,
+    };
+
+    expect(isSignal(null)).toBe(false);
+    expect(isReadonlySignal(null)).toBe(false);
+    expect(isSignal(lookalike)).toBe(false);
+    expect(isReadonlySignal(lookalike)).toBe(false);
   });
 });

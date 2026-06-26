@@ -16,6 +16,13 @@ describe('computed()', () => {
     expect(computed(() => 0)).to.be.instanceOf(Signal);
   });
 
+  it('should preserve the Computed constructor on the prototype chain', async () => {
+    const { Computed } = await import('./index');
+
+    expect(Computed.prototype.constructor).toBe(Computed);
+    expect(Object.getPrototypeOf(Computed.prototype)).toBe(Signal.prototype);
+  });
+
   it('should return updated value', () => {
     const a = signal('a');
     const b = signal('b');

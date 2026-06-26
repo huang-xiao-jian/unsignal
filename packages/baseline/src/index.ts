@@ -1,6 +1,5 @@
-// An named symbol/brand for detecting Signal instances even when they weren't
-// created using the same signals library version.
-const BRAND_SYMBOL = Symbol.for('preact-signals');
+// A shared symbol/brand for detecting baseline signal instances across copies.
+const BRAND_SYMBOL = Symbol.for('unsignal-signals');
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0;
@@ -260,14 +259,7 @@ function addDependency(signal: Signal): Node | undefined {
 /**
  * The base class for plain and computed signals.
  */
-//
-// A function with the same name is defined later, so we need to ignore TypeScript's
-// warning about a redeclared variable.
-//
-// The class is declared here, but later implemented with ES5-style prototypes.
-// This enables better control of the transpiled output size.
-// @ts-ignore: "Cannot redeclare exported variable 'Signal'."
-declare class Signal<T = any> {
+class Signal<T = any> {
   /** @internal */
   _value: unknown;
 
@@ -287,149 +279,110 @@ declare class Signal<T = any> {
   /** @internal */
   _batchSnapshotVersion: number;
 
-  constructor(value?: T, options?: SignalOptions<T>);
-
-  /** @internal */
-  _refresh(): boolean;
-
-  /** @internal */
-  _subscribe(node: Node): void;
-
-  /** @internal */
-  _unsubscribe(node: Node): void;
-
+  name?: string;
   /** @internal */
   _watched?(this: Signal<T>): void;
 
   /** @internal */
   _unwatched?(this: Signal<T>): void;
 
-  subscribe(fn: (value: T) => void): () => void;
+  readonly brand: typeof BRAND_SYMBOL = BRAND_SYMBOL;
 
-  name?: string;
-
-  valueOf(): T;
-
-  toString(): string;
-
-  toJSON(): T;
-
-  peek(): T;
-
-  brand: typeof BRAND_SYMBOL;
-
-  get value(): T;
-  set value(value: T);
-}
-
-export interface SignalOptions<T = any> {
-  watched?: (this: Signal<T>) => void;
-  unwatched?: (this: Signal<T>) => void;
-  name?: string;
-}
-
-/** @internal */
-// A class with the same name has already been declared, so we need to ignore
-// TypeScript's warning about a redeclared variable.
-//
-// The previously declared class is implemented here with ES5-style prototypes.
-// This enables better control of the transpiled output size.
-// @ts-ignore: "Cannot redeclare exported variable 'Signal'."
-function Signal(this: Signal, value?: unknown, options?: SignalOptions) {
-  this._value = value;
-  this._version = 0;
-  this._node = undefined;
-  this._targets = undefined;
-  this._batchSnapshotVersion = 0;
-  this._watched = options?.watched;
-  this._unwatched = options?.unwatched;
-  this.name = options?.name;
-}
-
-Signal.prototype.brand = BRAND_SYMBOL;
-
-Signal.prototype._refresh = function () {
-  return true;
-};
-
-Signal.prototype._subscribe = function (node) {
-  const targets = this._targets;
-  if (targets !== node && node._prevTarget === undefined) {
-    node._nextTarget = targets;
-    this._targets = node;
-
-    if (targets !== undefined) {
-      targets._prevTarget = node;
-    } else {
-      untracked(() => {
-        this._watched?.call(this);
-      });
-    }
+  constructor(value?: T, options?: SignalOptions<T>) {
+    this._value = value;
+    this._version = 0;
+    this._node = undefined;
+    this._targets = undefined;
+    this._batchSnapshotVersion = 0;
+    this._watched = options?.watched;
+    this._unwatched = options?.unwatched;
+    this.name = options?.name;
   }
-};
 
-Signal.prototype._unsubscribe = function (node) {
-  // Only run the unsubscribe step if the signal has any subscribers to begin with.
-  if (this._targets !== undefined) {
-    const prev = node._prevTarget;
-    const next = node._nextTarget;
-    if (prev !== undefined) {
-      prev._nextTarget = next;
-      node._prevTarget = undefined;
-    }
+  /** @internal */
+  _refresh(): boolean {
+    return true;
+  }
 
-    if (next !== undefined) {
-      next._prevTarget = prev;
-      node._nextTarget = undefined;
-    }
+  /** @internal */
+  _subscribe(node: Node): void {
+    const targets = this._targets;
+    if (targets !== node && node._prevTarget === undefined) {
+      node._nextTarget = targets;
+      this._targets = node;
 
-    if (node === this._targets) {
-      this._targets = next;
-      if (next === undefined) {
+      if (targets !== undefined) {
+        targets._prevTarget = node;
+      } else {
         untracked(() => {
-          this._unwatched?.call(this);
+          this._watched?.call(this);
         });
       }
     }
   }
-};
 
-Signal.prototype.subscribe = function (fn) {
-  const handle = effect(
-    () => {
-      const value = this.value;
-      untracked(() => fn(value));
-    },
-    { name: 'sub' }
-  );
-  return handle.unsubscribe.bind(handle);
-};
+  /** @internal */
+  _unsubscribe(node: Node): void {
+    if (this._targets !== undefined) {
+      const prev = node._prevTarget;
+      const next = node._nextTarget;
+      if (prev !== undefined) {
+        prev._nextTarget = next;
+        node._prevTarget = undefined;
+      }
 
-Signal.prototype.valueOf = function () {
-  return this.value;
-};
+      if (next !== undefined) {
+        next._prevTarget = prev;
+        node._nextTarget = undefined;
+      }
 
-Signal.prototype.toString = function () {
-  return this.value + '';
-};
+      if (node === this._targets) {
+        this._targets = next;
+        if (next === undefined) {
+          untracked(() => {
+            this._unwatched?.call(this);
+          });
+        }
+      }
+    }
+  }
 
-Signal.prototype.toJSON = function () {
-  return this.value;
-};
+  subscribe(fn: (value: T) => void): () => void {
+    const handle = effect(
+      () => {
+        const value = this.value;
+        untracked(() => fn(value));
+      },
+      { name: 'sub' }
+    );
+    return handle.unsubscribe.bind(handle);
+  }
 
-Signal.prototype.peek = function () {
-  return untracked(() => this.value);
-};
+  valueOf(): T {
+    return this.value;
+  }
 
-Object.defineProperty(Signal.prototype, 'value', {
-  get(this: Signal) {
+  toString(): string {
+    return this.value + '';
+  }
+
+  toJSON(): T {
+    return this.value;
+  }
+
+  peek(): T {
+    return untracked(() => this.value);
+  }
+
+  get value(): T {
     const node = addDependency(this);
     if (node !== undefined) {
       node._version = this._version;
     }
-    return this._value;
-  },
-  set(this: Signal, value) {
+    return this._value as T;
+  }
+
+  set value(value: T) {
     if (value !== this._value) {
       if (batchIteration > 100) {
         throw new Error('Cycle detected');
@@ -449,8 +402,14 @@ Object.defineProperty(Signal.prototype, 'value', {
         endBatch();
       }
     }
-  },
-});
+  }
+}
+
+export interface SignalOptions<T = any> {
+  watched?: (this: Signal<T>) => void;
+  unwatched?: (this: Signal<T>) => void;
+  name?: string;
+}
 
 /**
  * Create a new plain signal.
@@ -578,121 +537,100 @@ function cleanupSources(target: Computed | Effect) {
 /**
  * The base class for computed signals.
  */
-declare class Computed<T = any> extends Signal<T> {
+class Computed<T = any> extends Signal<T> {
   _fn: () => T;
   _sources?: Node;
   _globalVersion: number;
   _flags: number;
 
-  constructor(fn: () => T, options?: SignalOptions<T>);
-
-  _notify(): void;
-  get value(): T;
-}
-
-/** @internal */
-function Computed(this: Computed, fn: () => unknown, options?: SignalOptions) {
-  Signal.call(this, undefined, options);
-
-  this._fn = fn;
-  this._sources = undefined;
-  this._globalVersion = globalVersion - 1;
-  this._flags = OUTDATED;
-}
-
-Computed.prototype = new Signal() as Computed;
-
-Computed.prototype._refresh = function () {
-  this._flags &= ~NOTIFIED;
-
-  if (this._flags & RUNNING) {
-    return false;
+  constructor(fn: () => T, options?: SignalOptions<T>) {
+    super(undefined, options);
+    this._fn = fn;
+    this._sources = undefined;
+    this._globalVersion = globalVersion - 1;
+    this._flags = OUTDATED;
   }
 
-  // If this computed signal has subscribed to updates from its dependencies
-  // (TRACKING flag set) and none of them have notified about changes (OUTDATED
-  // flag not set), then the computed value can't have changed.
-  if ((this._flags & (OUTDATED | TRACKING)) === TRACKING) {
-    return true;
-  }
-  this._flags &= ~OUTDATED;
+  override _refresh(): boolean {
+    this._flags &= ~NOTIFIED;
 
-  if (this._globalVersion === globalVersion) {
-    return true;
-  }
-  this._globalVersion = globalVersion;
+    if (this._flags & RUNNING) {
+      return false;
+    }
 
-  // Mark this computed signal running before checking the dependencies for value
-  // changes, so that the RUNNING flag can be used to notice cyclical dependencies.
-  this._flags |= RUNNING;
-  if (this._version > 0 && !needsToRecompute(this)) {
+    if ((this._flags & (OUTDATED | TRACKING)) === TRACKING) {
+      return true;
+    }
+    this._flags &= ~OUTDATED;
+
+    if (this._globalVersion === globalVersion) {
+      return true;
+    }
+    this._globalVersion = globalVersion;
+
+    this._flags |= RUNNING;
+    if (this._version > 0 && !needsToRecompute(this)) {
+      this._flags &= ~RUNNING;
+      return true;
+    }
+
+    const prevContext = evalContext;
+    try {
+      prepareSources(this);
+      evalContext = this;
+      const value = this._fn();
+      if (this._flags & HAS_ERROR || this._value !== value || this._version === 0) {
+        this._value = value;
+        this._flags &= ~HAS_ERROR;
+        this._version++;
+      }
+    } catch (err) {
+      this._value = err;
+      this._flags |= HAS_ERROR;
+      this._version++;
+    }
+    evalContext = prevContext;
+    cleanupSources(this);
     this._flags &= ~RUNNING;
     return true;
   }
 
-  const prevContext = evalContext;
-  try {
-    prepareSources(this);
-    evalContext = this;
-    const value = this._fn();
-    if (this._flags & HAS_ERROR || this._value !== value || this._version === 0) {
-      this._value = value;
-      this._flags &= ~HAS_ERROR;
-      this._version++;
-    }
-  } catch (err) {
-    this._value = err;
-    this._flags |= HAS_ERROR;
-    this._version++;
-  }
-  evalContext = prevContext;
-  cleanupSources(this);
-  this._flags &= ~RUNNING;
-  return true;
-};
-
-Computed.prototype._subscribe = function (node) {
-  if (this._targets === undefined) {
-    this._flags |= OUTDATED | TRACKING;
-
-    // A computed signal subscribes lazily to its dependencies when it
-    // gets its first subscriber.
-    for (let node = this._sources; node !== undefined; node = node._nextSource) {
-      node._source._subscribe(node);
-    }
-  }
-  Signal.prototype._subscribe.call(this, node);
-};
-
-Computed.prototype._unsubscribe = function (node) {
-  // Only run the unsubscribe step if the computed signal has any subscribers.
-  if (this._targets !== undefined) {
-    Signal.prototype._unsubscribe.call(this, node);
-
-    // Computed signal unsubscribes from its dependencies when it loses its last subscriber.
-    // This makes it possible for unreferences subgraphs of computed signals to get garbage collected.
+  override _subscribe(node: Node): void {
     if (this._targets === undefined) {
-      this._flags &= ~TRACKING;
+      this._flags |= OUTDATED | TRACKING;
 
       for (let node = this._sources; node !== undefined; node = node._nextSource) {
-        node._source._unsubscribe(node);
+        node._source._subscribe(node);
+      }
+    }
+    super._subscribe(node);
+  }
+
+  override _unsubscribe(node: Node): void {
+    if (this._targets !== undefined) {
+      super._unsubscribe(node);
+
+      if (this._targets === undefined) {
+        this._flags &= ~TRACKING;
+
+        for (let node = this._sources; node !== undefined; node = node._nextSource) {
+          node._source._unsubscribe(node);
+        }
       }
     }
   }
-};
 
-Computed.prototype._notify = function () {
-  if (!(this._flags & NOTIFIED)) {
-    this._flags |= OUTDATED | NOTIFIED;
+  _notify(): void {
+    if (!(this._flags & NOTIFIED)) {
+      this._flags |= OUTDATED | NOTIFIED;
 
-    for (let node = this._targets; node !== undefined; node = node._nextTarget) {
-      node._target._notify();
+      for (let node = this._targets; node !== undefined; node = node._nextTarget) {
+        node._target._notify();
+      }
     }
   }
-};
 
-Object.defineProperty(Computed.prototype, 'value', {
-  get(this: Computed) {
+  override get value(): T {
     if (this._flags & RUNNING) {
       throw new Error('Cycle detected');
     }
@@ -704,9 +642,9 @@ Object.defineProperty(Computed.prototype, 'value', {
     if (this._flags & HAS_ERROR) {
       throw this._value;
     }
-    return this._value;
-  },
-});
+    return this._value as T;
+  }
+}
 
 /**
  * An interface for read-only signals.
@@ -720,6 +658,27 @@ interface ReadonlySignal<T = any> {
   toString(): string;
   toJSON(): T;
   brand: typeof BRAND_SYMBOL;
+}
+
+function isReadonlySignal<T = unknown>(value: unknown): value is ReadonlySignal<T> {
+  return value instanceof Signal && value.brand === BRAND_SYMBOL;
+}
+
+function isSignal<T = unknown>(value: unknown): value is Signal<T> {
+  if (!isReadonlySignal<T>(value)) {
+    return false;
+  }
+
+  let prototype = Object.getPrototypeOf(value);
+  while (prototype !== null) {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+    if (descriptor !== undefined) {
+      return typeof descriptor.set === 'function';
+    }
+    prototype = Object.getPrototypeOf(prototype);
+  }
+
+  return false;
 }
 
 /**
@@ -800,7 +759,7 @@ export interface Disposable {
 /**
  * The base class for reactive effects.
  */
-declare class Effect {
+class Effect {
   _fn?: EffectFn;
   _cleanup?: () => void;
   _sources?: Node;
@@ -809,78 +768,69 @@ declare class Effect {
   _debugCallback?: () => void;
   name?: string;
 
-  constructor(fn: EffectFn, options?: EffectOptions);
+  constructor(fn: EffectFn, options?: EffectOptions) {
+    this._fn = fn;
+    this._cleanup = undefined;
+    this._sources = undefined;
+    this._nextBatchedEffect = undefined;
+    this._flags = TRACKING;
+    this.name = options?.name;
+  }
 
-  _callback(): void;
-  _start(): () => void;
-  _notify(): void;
-  _dispose(): void;
-  dispose(): void;
+  _callback(): void {
+    const finish = this._start();
+    try {
+      if (this._flags & DISPOSED) return;
+      if (this._fn === undefined) return;
+
+      const cleanup = this._fn();
+      if (typeof cleanup === 'function') {
+        this._cleanup = cleanup;
+      }
+    } finally {
+      finish();
+    }
+  }
+
+  _start(): () => void {
+    if (this._flags & RUNNING) {
+      throw new Error('Cycle detected');
+    }
+    this._flags |= RUNNING;
+    this._flags &= ~DISPOSED;
+    cleanupEffect(this);
+    prepareSources(this);
+
+    /*@__INLINE__**/ startBatch();
+    const prevContext = evalContext;
+    evalContext = this;
+    return endEffect.bind(this, prevContext);
+  }
+
+  _notify(): void {
+    if (!(this._flags & NOTIFIED)) {
+      this._flags |= NOTIFIED;
+      this._nextBatchedEffect = batchedEffect;
+      batchedEffect = this;
+    }
+  }
+
+  _dispose(): void {
+    this._flags |= DISPOSED;
+
+    if (!(this._flags & RUNNING)) {
+      disposeEffect(this);
+    }
+  }
+
+  dispose(): void {
+    this._dispose();
+  }
 }
 
 export interface EffectOptions {
   name?: string;
 }
-
-/** @internal */
-function Effect(this: Effect, fn: EffectFn, options?: EffectOptions) {
-  this._fn = fn;
-  this._cleanup = undefined;
-  this._sources = undefined;
-  this._nextBatchedEffect = undefined;
-  this._flags = TRACKING;
-  this.name = options?.name;
-}
-
-Effect.prototype._callback = function () {
-  const finish = this._start();
-  try {
-    if (this._flags & DISPOSED) return;
-    if (this._fn === undefined) return;
-
-    const cleanup = this._fn();
-    if (typeof cleanup === 'function') {
-      this._cleanup = cleanup;
-    }
-  } finally {
-    finish();
-  }
-};
-
-Effect.prototype._start = function () {
-  if (this._flags & RUNNING) {
-    throw new Error('Cycle detected');
-  }
-  this._flags |= RUNNING;
-  this._flags &= ~DISPOSED;
-  cleanupEffect(this);
-  prepareSources(this);
-
-  /*@__INLINE__**/ startBatch();
-  const prevContext = evalContext;
-  evalContext = this;
-  return endEffect.bind(this, prevContext);
-};
-
-Effect.prototype._notify = function () {
-  if (!(this._flags & NOTIFIED)) {
-    this._flags |= NOTIFIED;
-    this._nextBatchedEffect = batchedEffect;
-    batchedEffect = this;
-  }
-};
-
-Effect.prototype._dispose = function () {
-  this._flags |= DISPOSED;
-
-  if (!(this._flags & RUNNING)) {
-    disposeEffect(this);
-  }
-};
-
-Effect.prototype.dispose = function () {
-  this._dispose();
-};
 /**
  * Create an effect to run arbitrary code in response to signal changes.
  *
@@ -932,6 +882,8 @@ export {
   batch,
   computed,
   effect,
+  isReadonlySignal,
+  isSignal,
   untracked,
   type ReadonlySignal,
 };
