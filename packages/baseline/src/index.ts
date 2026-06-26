@@ -1,5 +1,6 @@
 // A shared symbol/brand for detecting baseline signal instances across copies.
-const BRAND_SYMBOL = Symbol.for('unsignal-signals');
+const BRAND_SYMBOL = Symbol('@unsignal/baseline');
+const READONLY_BRAND_SYMBOL = Symbol('@unsignal/baseline/readonly');
 
 // Flags for Computed and Effect.
 const RUNNING = 1 << 0;
@@ -286,7 +287,7 @@ class Signal<T = any> {
   /** @internal */
   _unwatched?(this: Signal<T>): void;
 
-  readonly brand: typeof BRAND_SYMBOL = BRAND_SYMBOL;
+  readonly brand = BRAND_SYMBOL;
 
   constructor(value?: T, options?: SignalOptions<T>) {
     this._value = value;
@@ -551,6 +552,8 @@ class Computed<T = any> extends Signal<T> {
     this._flags = OUTDATED;
   }
 
+  override brand = READONLY_BRAND_SYMBOL;
+
   override _refresh(): boolean {
     this._flags &= ~NOTIFIED;
 
@@ -651,34 +654,33 @@ class Computed<T = any> extends Signal<T> {
  */
 interface ReadonlySignal<T = any> {
   readonly value: T;
+  readonly brand: Symbol;
   peek(): T;
 
   subscribe(fn: (value: T) => void): () => void;
   valueOf(): T;
   toString(): string;
   toJSON(): T;
-  brand: typeof BRAND_SYMBOL;
-}
-
-function isReadonlySignal<T = unknown>(value: unknown): value is ReadonlySignal<T> {
-  return value instanceof Signal && value.brand === BRAND_SYMBOL;
 }
 
 function isSignal<T = unknown>(value: unknown): value is Signal<T> {
-  if (!isReadonlySignal<T>(value)) {
+  return value instanceof Signal;
+}
+
+function isWritableSignal<T = unknown>(value: unknown): value is Signal<T> {
+  if (!isSignal<T>(value)) {
     return false;
   }
 
-  let prototype = Object.getPrototypeOf(value);
-  while (prototype !== null) {
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
-    if (descriptor !== undefined) {
-      return typeof descriptor.set === 'function';
-    }
-    prototype = Object.getPrototypeOf(prototype);
+  return value.brand === BRAND_SYMBOL;
+}
+
+function isReadonlySignal<T = unknown>(value: unknown): value is ReadonlySignal<T> {
+  if (!isSignal<T>(value)) {
+    return false;
   }
 
-  return false;
+  return value.brand === READONLY_BRAND_SYMBOL;
 }
 
 /**
@@ -884,6 +886,7 @@ export {
   effect,
   isReadonlySignal,
   isSignal,
+  isWritableSignal,
   untracked,
   type ReadonlySignal,
 };

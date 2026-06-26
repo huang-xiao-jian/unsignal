@@ -31,7 +31,7 @@ The function is divided into multiple sub-packages. the prefix will be uniformly
 | `@unsignal/core`     | Signal enhancement for original                               |
 | `@unsignal/baseline` | Signal builtin-implementation to replace @preact/signals-core |
 
-> NOTE: The `@unsignal/baseline` remains WIP state!
+> NOTE: The `@unsignal/baseline` remains WIP status, it doesn't have downsteram dependency yet!
 
 ```mermaid
 graph TD

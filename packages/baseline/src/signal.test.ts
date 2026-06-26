@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { computed, effect, isReadonlySignal, isSignal, signal, Signal } from './index';
+import {
+  computed,
+  effect,
+  isReadonlySignal,
+  isSignal,
+  isWritableSignal,
+  signal,
+  Signal,
+} from './index';
 
 describe('signal', () => {
   it('should return value', () => {
@@ -259,26 +267,28 @@ describe('signal', () => {
     });
   });
 
-  it('signals should be identified with a symbol', () => {
-    const a = signal(0);
-    expect(a.brand).to.equal(Symbol.for('unsignal-signals'));
-  });
-
-  it('should be identified with a symbol', () => {
-    const a = computed(() => {});
-    expect(a.brand).to.equal(Symbol.for('unsignal-signals'));
-  });
-
   it('should identify writable baseline signals with isSignal', () => {
     const a = signal(0);
 
     expect(isSignal(a)).toBe(true);
   });
 
+  it('should identify computed signals with isSignal', () => {
+    const a = computed(() => 1);
+
+    expect(isSignal(a)).toBe(true);
+  });
+
+  it('should identify writable baseline signals with isWritableSignal', () => {
+    const a = signal(0);
+
+    expect(isWritableSignal(a)).toBe(true);
+  });
+
   it('should not identify computed signals as writable baseline signals', () => {
     const a = computed(() => 1);
 
-    expect(isSignal(a)).toBe(false);
+    expect(isWritableSignal(a)).toBe(false);
   });
 
   it('should identify computed signals with isReadonlySignal', () => {
@@ -287,7 +297,13 @@ describe('signal', () => {
     expect(isReadonlySignal(a)).toBe(true);
   });
 
-  it('should reject non-signal values from both guards', () => {
+  it('should not identify writable signals as readonly-only signals', () => {
+    const a = signal(0);
+
+    expect(isReadonlySignal(a)).toBe(false);
+  });
+
+  it('should reject non-signal values from all guards', () => {
     const lookalike = {
       brand: Symbol.for('unsignal-signals'),
       peek() {
@@ -298,7 +314,9 @@ describe('signal', () => {
 
     expect(isSignal(null)).toBe(false);
     expect(isReadonlySignal(null)).toBe(false);
+    expect(isWritableSignal(null)).toBe(false);
     expect(isSignal(lookalike)).toBe(false);
     expect(isReadonlySignal(lookalike)).toBe(false);
+    expect(isWritableSignal(lookalike)).toBe(false);
   });
 });
