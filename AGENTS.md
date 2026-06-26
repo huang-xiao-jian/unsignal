@@ -43,17 +43,18 @@ graph TD
     react -->|depends on| core
 ```
 
-The packages and specs follow the same structure:
+The packages and stable OpenSpec capabilities follow the same structure:
 
 ```shell
 └── packages
     ├── vue
-    └── react
-    └── core
+    ├── react
+    ├── core
     └── baseline
-└── specs
-    ├── vue
-    └── react
-    └── core
-    └── baseline
+└── openspec
+    └── specs
+        ├── vue
+        ├── react
+        ├── core
+        └── baseline
 ```

@@ -125,7 +125,7 @@ function onToggle(id: number) {
 </template>
 ```
 
-#### SignalPlugin
+#### `SignalPlugin`
 
 Implements a `Vue` plugin. After global registration, the `Observer` component is available globally without per-file imports
 
@@ -186,14 +186,11 @@ import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
 
-// Use in setup
 const value = useSignalValue(count);
 
-// Works with Vue watch
 watch(value, (newVal) => {
   console.log('count changed:', newVal);
 });
 
-// Works with Vue computed
 const label = vueComputed(() => `Count is ${value.value}`);
 ```
