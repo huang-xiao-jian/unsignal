@@ -44,10 +44,10 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       a.value + ' ' + b.value;
     });
-    const dispose = effect(spy);
+    const handle = effect(spy);
     spy.mockClear();
 
-    dispose();
+    handle.dispose();
     expect(spy).not.toHaveBeenCalled();
 
     a.value = 'aa';
@@ -103,7 +103,7 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       a.value + ' ' + b.value;
     });
-    const dispose = effect(function () {
+    const handle = effect(function () {
       spy();
       if (a.value === 'aa') {
         this.dispose();
@@ -114,7 +114,7 @@ describe('effect()', () => {
 
     a.value = 'aa';
     expect(spy).toHaveBeenCalledTimes(2);
-    dispose();
+    handle.dispose();
 
     a.value = 'aaa';
     expect(spy).toHaveBeenCalledTimes(2);
@@ -146,7 +146,7 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       a.value + ' ' + b.value;
     });
-    const dispose = effect(function () {
+    const handle = effect(function () {
       spy();
       this.dispose();
     });
@@ -155,7 +155,7 @@ describe('effect()', () => {
 
     a.value = 'aa';
     expect(spy).toHaveBeenCalledOnce();
-    dispose();
+    handle.dispose();
 
     a.value = 'aaa';
     expect(spy).toHaveBeenCalledOnce();
@@ -166,10 +166,10 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       s.value;
     });
-    const unsub = effect(spy);
+    const handle = effect(spy);
     spy.mockClear();
 
-    unsub();
+    handle.unsubscribe();
     s.value = 42;
     expect(spy).not.toHaveBeenCalled();
   });
@@ -257,11 +257,11 @@ describe('effect()', () => {
   it('should call the cleanup callback function when disposed', () => {
     const spy = vi.fn();
 
-    const dispose = effect(() => {
+    const handle = effect(() => {
       return spy;
     });
     expect(spy).not.toHaveBeenCalled();
-    dispose();
+    handle.dispose();
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -400,9 +400,9 @@ describe('effect()', () => {
     const a = signal(0);
     const spy = vi.fn();
 
-    const dispose = effect(() => {
+    const handle = effect(() => {
       if (a.value > 0) {
-        dispose();
+        handle.dispose();
         return spy;
       }
     });
@@ -417,11 +417,11 @@ describe('effect()', () => {
     const a = signal(0);
     const spy = vi.fn();
 
-    const dispose = effect(() => {
+    const handle = effect(() => {
       a.value;
       spy();
       return () => {
-        dispose();
+        handle.dispose();
       };
     });
     expect(spy).toHaveBeenCalledOnce();
@@ -550,9 +550,9 @@ describe('effect()', () => {
   });
 
   it('should allow disposing the effect multiple times', () => {
-    const dispose = effect(() => undefined);
-    dispose();
-    expect(() => dispose()).not.to.throw();
+    const handle = effect(() => undefined);
+    handle.dispose();
+    expect(() => handle.dispose()).not.to.throw();
   });
 
   it('should support resource management disposal', () => {
@@ -570,9 +570,9 @@ describe('effect()', () => {
   it('should allow disposing a running effect', () => {
     const a = signal(0);
     const spy = vi.fn();
-    const dispose = effect(() => {
+    const handle = effect(() => {
       if (a.value === 1) {
-        dispose();
+        handle.dispose();
         spy();
       }
     });
@@ -588,12 +588,12 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       a.value;
     });
-    const dispose = effect(spy);
+    const handle = effect(spy);
     spy.mockClear();
 
     batch(() => {
       a.value = 1;
-      dispose();
+      handle.dispose();
     });
 
     expect(spy).not.toHaveBeenCalled();
@@ -604,12 +604,12 @@ describe('effect()', () => {
     const spy = vi.fn(() => {
       a.value;
     });
-    const dispose = effect(spy);
+    const handle = effect(spy);
     spy.mockClear();
 
     batch(() => {
       a.value = 1;
-      dispose();
+      handle.dispose();
       a.value = 2;
     });
 

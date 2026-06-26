@@ -274,14 +274,14 @@ describe('computed()', () => {
     });
 
     effect(spy1);
-    const dispose = effect(spy2);
+    const handle = effect(spy2);
     effect(spy3);
 
     expect(spy1).toHaveBeenCalledOnce();
     expect(spy2).toHaveBeenCalledOnce();
     expect(spy3).toHaveBeenCalledOnce();
 
-    dispose();
+    handle.dispose();
 
     s.value = 1;
     expect(spy1).toHaveBeenCalledTimes(2);
@@ -471,16 +471,16 @@ describe('computed()', () => {
       const s = signal(0);
 
       let ref: WeakRef<ReadonlySignal>;
-      let dispose: () => void;
+      let handle: { dispose: () => void };
       (function () {
         const c = computed(() => s.value);
         ref = new WeakRef(c);
-        dispose = effect(() => {
+        handle = effect(() => {
           c.value;
         });
       })();
 
-      dispose();
+      handle.dispose();
       (gc as () => void)();
       await new Promise((resolve) => setTimeout(resolve, 0));
       (gc as () => void)();
@@ -709,7 +709,7 @@ describe('computed()', () => {
       const d = computed(() => a.value);
 
       let result = '';
-      const unsub = effect(() => {
+      const handle = effect(() => {
         result = c.value;
       });
 
@@ -718,7 +718,7 @@ describe('computed()', () => {
 
       spyB.mockClear();
       spyC.mockClear();
-      unsub();
+      handle.unsubscribe();
 
       a.value = 'aa';
 

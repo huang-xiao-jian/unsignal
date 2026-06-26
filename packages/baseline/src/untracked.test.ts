@@ -35,7 +35,7 @@ describe('untracked', () => {
     const a = signal(1);
     const aChangedTime = signal(0);
 
-    const dispose = effect(() => {
+    const handle = effect(() => {
       a.value;
       untracked(() => {
         aChangedTime.value = aChangedTime.value + 1;
@@ -47,7 +47,7 @@ describe('untracked', () => {
     a.value = 3;
     expect(aChangedTime.value).to.equal(3);
 
-    dispose();
+    handle.dispose();
   });
 
   it('should block tracking inside computed signals', () => {

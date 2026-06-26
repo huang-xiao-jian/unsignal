@@ -395,13 +395,14 @@ Signal.prototype._unsubscribe = function (node) {
 };
 
 Signal.prototype.subscribe = function (fn) {
-  return effect(
+  const handle = effect(
     () => {
       const value = this.value;
       untracked(() => fn(value));
     },
     { name: 'sub' }
   );
+  return handle.unsubscribe.bind(handle);
 };
 
 Signal.prototype.valueOf = function () {
@@ -790,9 +791,11 @@ type EffectFn =
   | ((this: { dispose: () => void }) => void | (() => void))
   | (() => void | (() => void));
 
-type DisposeFn = (() => void) & {
+export interface Disposable {
+  dispose(): void;
+  unsubscribe(): void;
   [Symbol.dispose]: () => void;
-};
+}
 
 /**
  * The base class for reactive effects.
@@ -889,9 +892,9 @@ Effect.prototype.dispose = function () {
  * gets disposed, whichever happens first.
  *
  * @param fn The effect callback.
- * @returns A function for disposing the effect.
+ * @returns An object for disposing or unsubscribing the effect.
  */
-function effect(fn: EffectFn, options?: EffectOptions): DisposeFn {
+function effect(fn: EffectFn, options?: EffectOptions): Disposable {
   const effect = new Effect(fn, options);
   try {
     effect._callback();
@@ -899,11 +902,12 @@ function effect(fn: EffectFn, options?: EffectOptions): DisposeFn {
     effect._dispose();
     throw err;
   }
-  // Return a bound function instead of a wrapper like `() => effect._dispose()`,
-  // because bound functions seem to be just as fast and take up a lot less memory.
   const dispose = effect._dispose.bind(effect);
-  (dispose as any)[Symbol.dispose] = dispose;
-  return dispose as DisposeFn;
+  return {
+    dispose,
+    unsubscribe: dispose,
+    [Symbol.dispose]: dispose,
+  };
 }
 
 //#endregion Effect

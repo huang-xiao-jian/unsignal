@@ -53,19 +53,60 @@ describe('signal', () => {
     });
 
     effect(spy1);
-    const dispose = effect(spy2);
+    const handle = effect(spy2);
     effect(spy3);
 
     expect(spy1).toHaveBeenCalledOnce();
     expect(spy2).toHaveBeenCalledOnce();
     expect(spy3).toHaveBeenCalledOnce();
 
-    dispose();
+    handle.dispose();
 
     s.value = 1;
     expect(spy1).toHaveBeenCalledTimes(2);
     expect(spy2).toHaveBeenCalledOnce();
     expect(spy3).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return an effect handle object with dispose, unsubscribe, and Symbol.dispose', () => {
+    const handle = effect(() => {});
+
+    expect(handle).toBeTypeOf('object');
+    expect(handle).not.toBeNull();
+    expect(handle.dispose).toBeTypeOf('function');
+    expect(handle.unsubscribe).toBeTypeOf('function');
+    expect(handle[Symbol.dispose]).toBeTypeOf('function');
+  });
+
+  it('should stop future updates when the effect handle is unsubscribed', () => {
+    const source = signal(0);
+    const spy = vi.fn(() => {
+      source.value;
+    });
+
+    const handle = effect(spy);
+    expect(spy).toHaveBeenCalledOnce();
+
+    handle.unsubscribe();
+    source.value = 1;
+
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
+  it('should run cleanup only once when disposed through multiple handle methods', () => {
+    const cleanup = vi.fn();
+    const source = signal(0);
+
+    const handle = effect(() => {
+      source.value;
+      return cleanup;
+    });
+
+    handle.dispose();
+    handle.unsubscribe();
+    handle[Symbol.dispose]();
+
+    expect(cleanup).toHaveBeenCalledTimes(1);
   });
 
   describe('.peek()', () => {

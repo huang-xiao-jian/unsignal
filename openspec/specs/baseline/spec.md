@@ -58,6 +58,16 @@ interface EffectOptions {
 }
 ```
 
+#### `Disposable`
+
+```ts
+interface Disposable {
+  dispose(): void;
+  unsubscribe(): void;
+  [Symbol.dispose](): void;
+}
+```
+
 ### API Reference
 
 #### `signal`
@@ -123,14 +133,10 @@ console.log(fullName.value); // Ada Lovelace
 Creates a reactive side effect.
 
 ```ts
-type DisposeFn = (() => void) & {
-  [Symbol.dispose]: () => void;
-};
-
 function effect(
   fn: (() => void | (() => void)) | ((this: { dispose: () => void }) => void | (() => void)),
   options?: EffectOptions
-): DisposeFn;
+): Disposable;
 ```
 
 **Behavior:**
@@ -139,7 +145,8 @@ function effect(
 - tracks signals read during execution
 - re-runs when tracked dependencies change
 - may return a cleanup function
-- returns a disposer that stops further tracking and cleanup
+- returns a disposable resource handle that stops further tracking and cleanup
+- exposes equivalent `dispose()`, `unsubscribe()`, and `Symbol.dispose` teardown entry points
 
 **Usage Example:**
 
@@ -148,11 +155,11 @@ import { effect, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 
-const dispose = effect(() => {
+const handle = effect(() => {
   console.log(count.value);
 });
 
-dispose();
+handle.dispose();
 ```
 
 #### `batch`
