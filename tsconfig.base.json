@@ -11,6 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@unsignal/baseline": ["./packages/baseline/src/index.ts"],
+      "@unsignal/core": ["./packages/core/src/index.ts"]
+    }
   }
 }
