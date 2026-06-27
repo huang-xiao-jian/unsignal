@@ -2,7 +2,7 @@
 
 ## Business Objective
 
-Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite)-style `@preact/signals-core` reactive bridging capabilities
+Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite)-style `@unsignal/baseline` reactive bridging capabilities
 
 ## Business Requirements
 
@@ -16,8 +16,8 @@ Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx
 
 ### Design Principles
 
-- Assume Signal management **stay outside of components**, the `@unsignal/react` provides only the **consumption** bridge — developers can use this package without any dependency on or knowledge of `@preact/signals-react`
-- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
+- Assume Signal management **stay outside of components**, the `@unsignal/react` provides only the **consumption** bridge — developers can use this package without any dependency on or knowledge of `@unsignal/baseline`
+- Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
 - `observer` implementation is based on `React.useSyncExternalStore` + `effect()` dependency tracking: uses `useSyncExternalStore` to subscribe to external signal changes, `effect()` automatically tracks `signal` dependencies read by the component during the render phase, and signal changes trigger re-renders
 - Control-flow components (`Show` / `For` / `Switch`) have **built-in fine-grained reactivity**: each item / branch is independently tracked so that only the affected DOM nodes re-render
 
@@ -49,7 +49,7 @@ function observer<P extends object>(
 **Usage Example:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { observer } from '@unsignal/react';
 
 const count = signal(0);
@@ -76,7 +76,7 @@ const Observer: FunctionComponent<ObserverProps>;
 **Usage Example:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Observer } from '@unsignal/react';
 
 const count = signal(0);
@@ -96,7 +96,7 @@ function App() {
 Reads the current value from an external `Signal` and subscribes to changes. No `observer` wrapping needed — reactive re-rendering works standalone
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 function useSignalValue<T>(signal: ReadonlySignal<T>): T;
 ```
@@ -108,7 +108,7 @@ function useSignalValue<T>(signal: ReadonlySignal<T>): T;
 **Usage Example:**
 
 ```tsx
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/react';
 
 const count = signal(0);
@@ -130,7 +130,7 @@ function Counter() {
 Reads and writes an external writable `Signal`, with an API style similar to `useState`. Internally integrates `immer` to support mutable-style updates, simplifying complex state updates. `immer` is a required `peerDependency`.
 
 ```ts
-import type { Signal } from '@preact/signals-core';
+import type { Signal } from '@unsignal/baseline';
 import type { Draft } from 'immer';
 
 type Primitive = string | number | boolean | bigint | symbol | null | undefined;
@@ -154,7 +154,7 @@ function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 **Primitive types — must explicitly return a new value:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/react';
 
 const count = signal(0);
@@ -173,7 +173,7 @@ function Counter() {
 **Objects / arrays — use mutable style (`void`):**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/react';
 
 interface Todo {
@@ -211,7 +211,7 @@ function TodoList() {
 Runs a side-effect that automatically tracks signal dependencies. Re-runs whenever any tracked signal changes. Cleans up automatically on unmount.
 
 ```ts
-import type { EffectOptions } from '@preact/signals-core';
+import type { EffectOptions } from '@unsignal/baseline';
 
 function useSignalEffect(callback: () => void | (() => void), options?: EffectOptions): void;
 ```
@@ -226,7 +226,7 @@ function useSignalEffect(callback: () => void | (() => void), options?: EffectOp
 **Usage Example:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalEffect } from '@unsignal/react';
 
 const count = signal(0);
@@ -247,7 +247,7 @@ function Logger() {
 Bridges a normal React value (from props, `useState`, `useMemo`, etc.) into the signal world. Returns a `ReadonlySignal` that automatically stays in sync with the supplied value on every render. Useful for exposing React-owned state to signal-based consumers without manual synchronization.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface UseLiveSignalOptions<T> {
   equals?: (previous: T, next: T) => boolean;
@@ -267,7 +267,7 @@ function useLiveSignal<T>(value: T, options?: UseLiveSignalOptions<T>): Readonly
 
 ```tsx
 import { useLiveSignal } from '@unsignal/react';
-import { computed } from '@preact/signals-core';
+import { computed } from '@unsignal/baseline';
 
 interface CounterProps {
   initialCount: number;

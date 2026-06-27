@@ -5,5 +5,3 @@ export interface SignalStore<Snapshot> {
   getSnapshot: () => Snapshot;
   getServerSnapshot: () => Snapshot;
 }
-
-export type DisposerFn = () => void;

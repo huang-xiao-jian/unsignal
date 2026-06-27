@@ -1,4 +1,4 @@
-import type { ReadonlySignal, Signal } from '@preact/signals-core';
+import type { ReadonlySignal, Signal } from '@unsignal/baseline';
 import type { ReactElement, ReactNode } from 'react';
 import { Fragment } from 'react';
 import { observer } from '../hoc/observer';

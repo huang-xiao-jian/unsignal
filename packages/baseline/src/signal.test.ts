@@ -81,13 +81,13 @@ describe('signal', () => {
   });
 
   it('should return an effect handle object with dispose, unsubscribe, and Symbol.dispose', () => {
-    const handle = effect(() => {});
+    const disposable = effect(() => {});
 
-    expect(handle).toBeTypeOf('object');
-    expect(handle).not.toBeNull();
-    expect(handle.dispose).toBeTypeOf('function');
-    expect(handle.unsubscribe).toBeTypeOf('function');
-    expect(handle[Symbol.dispose]).toBeTypeOf('function');
+    expect(disposable).toBeTypeOf('object');
+    expect(disposable).not.toBeNull();
+    expect(disposable.dispose).toBeTypeOf('function');
+    expect(disposable.unsubscribe).toBeTypeOf('function');
+    expect(disposable[Symbol.dispose]).toBeTypeOf('function');
   });
 
   it('should stop future updates when the effect handle is unsubscribed', () => {
@@ -109,14 +109,14 @@ describe('signal', () => {
     const cleanup = vi.fn();
     const source = signal(0);
 
-    const handle = effect(() => {
+    const disposable = effect(() => {
       source.value;
       return cleanup;
     });
 
-    handle.dispose();
-    handle.unsubscribe();
-    handle[Symbol.dispose]();
+    disposable.dispose();
+    disposable.unsubscribe();
+    disposable[Symbol.dispose]();
 
     expect(cleanup).toHaveBeenCalledTimes(1);
   });

@@ -1,27 +1,30 @@
-import { effect } from '@preact/signals-core';
-import type { DisposerFn } from './reaction.js';
+import { Disposable, DisposeFn, effect } from '@unsignal/baseline';
+import { Cleaner, OnCleanup } from './clean';
 
-export type OnCleanup = (cleanupFn: () => void) => void;
-
-export function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn {
-  let cleanups: (() => void)[] = [];
-
-  const runCleanups = () => {
-    for (const c of cleanups) c();
-    cleanups = [];
+export function watchEffect(fn: (onCleanup: OnCleanup) => void): Disposable {
+  const state = {
+    disposed: false,
   };
-
-  const onCleanup: OnCleanup = (cleanupFn) => {
-    cleanups.push(cleanupFn);
-  };
-
-  const dispose = effect(() => {
-    runCleanups();
-    fn(onCleanup);
+  const cleaner = new Cleaner();
+  const disposable = effect(() => {
+    // Cleanup previous run
+    cleaner.cleanup();
+    // Run the effect with manual cleanup registration
+    fn(cleaner.onCleanup);
   });
 
-  return () => {
-    runCleanups();
-    dispose();
+  const disposeFn: DisposeFn = () => {
+    if (state.disposed) {
+      return;
+    }
+    state.disposed = true;
+
+    // Cleanup the disposers
+    cleaner.cleanup();
+
+    // Cleanup the effect
+    disposable.dispose();
   };
+
+  return new Disposable(disposeFn);
 }

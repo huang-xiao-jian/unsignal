@@ -274,11 +274,11 @@ import { effect, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 
-const handle = effect(() => {
+const disposable = effect(() => {
   console.log(count.value);
 });
 
-handle.dispose();
+disposable.dispose();
 ```
 
 #### `batch`

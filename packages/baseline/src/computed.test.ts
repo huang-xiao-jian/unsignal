@@ -478,16 +478,16 @@ describe('computed()', () => {
       const s = signal(0);
 
       let ref: WeakRef<ReadonlySignal>;
-      let handle: { dispose: () => void };
+      let disposable: { dispose: () => void };
       (function () {
         const c = computed(() => s.value);
         ref = new WeakRef(c);
-        handle = effect(() => {
+        disposable = effect(() => {
           c.value;
         });
       })();
 
-      handle.dispose();
+      disposable.dispose();
       (gc as () => void)();
       await new Promise((resolve) => setTimeout(resolve, 0));
       (gc as () => void)();
@@ -716,7 +716,7 @@ describe('computed()', () => {
       const d = computed(() => a.value);
 
       let result = '';
-      const handle = effect(() => {
+      const disposable = effect(() => {
         result = c.value;
       });
 
@@ -725,7 +725,7 @@ describe('computed()', () => {
 
       spyB.mockClear();
       spyC.mockClear();
-      handle.unsubscribe();
+      disposable.unsubscribe();
 
       a.value = 'aa';
 

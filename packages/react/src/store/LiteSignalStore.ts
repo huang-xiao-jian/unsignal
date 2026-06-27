@@ -1,7 +1,8 @@
+import { type Disposable } from '@unsignal/baseline';
 import { reaction } from '@unsignal/core';
 
 import { AtomicTimerScheduler } from './AtomicTimerScheduler';
-import type { DisposerFn, SignalStore, StoreChangeCallback } from './types';
+import type { SignalStore, StoreChangeCallback } from './types';
 
 /**
  * A lite implementation of SignalStore.
@@ -19,7 +20,7 @@ import type { DisposerFn, SignalStore, StoreChangeCallback } from './types';
 export class LiteSignalStore implements SignalStore<Symbol> {
   private value: Symbol = Symbol();
   private subscribers = new Set<StoreChangeCallback>();
-  private disposers = new Set<DisposerFn>();
+  private disposers = new Set<Disposable>();
   private deferrer = new AtomicTimerScheduler();
 
   /**
@@ -29,15 +30,17 @@ export class LiteSignalStore implements SignalStore<Symbol> {
    * Does NOT modify subscribers — subscriber lifecycle is independent.
    */
   track(fn: () => void): void {
-    this.disposers.forEach((dispose) => dispose());
+    this.disposers.forEach((disposable) => {
+      disposable.dispose();
+    });
     this.disposers.clear();
 
-    const dispose = reaction(fn, () => {
+    const disposer = reaction(fn, () => {
       this.value = Symbol();
       this.subscribers.forEach((cb) => cb());
     });
 
-    this.disposers.add(dispose);
+    this.disposers.add(disposer);
   }
 
   /**
@@ -45,7 +48,9 @@ export class LiteSignalStore implements SignalStore<Symbol> {
    */
   release(): void {
     this.deferrer.schedule(() => {
-      this.disposers.forEach((dispose) => dispose());
+      this.disposers.forEach((disposable) => {
+        disposable.dispose();
+      });
       this.disposers.clear();
     });
   }

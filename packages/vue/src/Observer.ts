@@ -1,4 +1,4 @@
-import { effect } from '@preact/signals-core';
+import { effect } from '@unsignal/baseline';
 import { defineComponent, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue';
 
 export const Observer = defineComponent({
@@ -6,7 +6,7 @@ export const Observer = defineComponent({
   setup(props, { slots }) {
     const tick: Ref<number> = ref(0);
 
-    const dispose = effect(() => {
+    const disposable = effect(() => {
       // 在 effect 内调用 slot，使 signal.value 表达式被求值
       // effect 自动追踪这些 signal 作为依赖
       slots.default?.();
@@ -15,7 +15,9 @@ export const Observer = defineComponent({
     });
 
     if (getCurrentScope()) {
-      onScopeDispose(dispose);
+      onScopeDispose(() => {
+        disposable.dispose();
+      });
     }
 
     return () => {

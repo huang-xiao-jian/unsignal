@@ -1,4 +1,4 @@
-import { computed, signal, type ReadonlySignal } from '@preact/signals-core';
+import { computed, signal, type ReadonlySignal } from '@unsignal/baseline';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createSSRApp,

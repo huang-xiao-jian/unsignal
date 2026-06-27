@@ -1,4 +1,4 @@
-import { signal, type ReadonlySignal, type Signal } from '@preact/signals-core';
+import { signal, type ReadonlySignal, type Signal } from '@unsignal/baseline';
 import { useRef } from 'react';
 
 export interface UseLiveSignalOptions<T> {

@@ -2,7 +2,7 @@
 
 ## Business Objective
 
-Extend the `@preact/signals-core` API
+Provide framework-agnostic reactive utilities that compose with `@unsignal/baseline`.
 
 ## Business Requirements
 
@@ -13,8 +13,8 @@ Extend the `@preact/signals-core` API
 
 ### Design Principles
 
-- Functionality complements `@preact/signals-core`, without duplicating its existing APIs (`signal` / `effect` / `computed`, etc.)
-- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek` / `createModel`), **usage of non-public methods is strictly prohibited!**
+- Functionality complements `@unsignal/baseline`, without duplicating its existing APIs (`signal` / `effect` / `computed`, etc.)
+- Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
 
 ### Types
 
@@ -34,26 +34,6 @@ Utility type for registering cleanup functions, used for cleaning up side effect
 type OnCleanup = (cleanupFn: () => void) => void;
 ```
 
-#### `ReadonlyModel`
-
-Utility type that transforms all `Signal<T>` properties in a `Model<TModel>` into `ReadonlySignal<T>`, recursively, while preserving methods and `ReadonlySignal` properties. The disposal contract is inherited from the original `Model<TModel>` type.
-
-```ts
-type ReadonlyModelFields<TModel> = {
-  [Key in keyof TModel]: TModel[Key] extends ReadonlySignal<unknown>
-    ? TModel[Key]
-    : TModel[Key] extends Signal<infer U>
-      ? ReadonlySignal<U>
-      : TModel[Key] extends (...args: any[]) => any
-        ? TModel[Key]
-        : TModel[Key] extends object
-          ? ReadonlyModel<TModel[Key]>
-          : TModel[Key];
-};
-
-type ReadonlyModel<TModel> = Omit<Model<TModel>, keyof TModel> & ReadonlyModelFields<TModel>;
-```
-
 ### API Reference
 
 #### `reaction`
@@ -71,7 +51,7 @@ function reaction(fn: () => void, callback: () => void): DisposerFn;
 **Usage Example: Track `signal` changes and execute callback**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { reaction } from '@unsignal/core';
 
 const count = signal(0);
@@ -116,7 +96,7 @@ function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
 **Usage Example: Expose a signal as read-only**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { readonly } from '@unsignal/core';
 
 const count = signal(0);
@@ -133,7 +113,7 @@ console.log(ro.value); // 1
 **Usage Example: Wrap an existing `ReadonlySignal`**
 
 ```ts
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { readonly } from '@unsignal/core';
 
 const count = signal(0);
@@ -141,91 +121,6 @@ const doubled = computed(() => count.value * 2);
 
 const ro = readonly(doubled);
 // ro !== doubled, but always mirrors doubled.value
-```
-
-#### `createReadonlyModel`
-
-```ts
-type ReadonlyModelConstructor<TModel, TFactoryArgs extends any[] = []> = new (
-  ...args: TFactoryArgs
-) => ReadonlyModel<TModel>;
-
-function createReadonlyModel<TModel, TFactoryArgs extends any[] = []>(
-  modelFactory: ModelFactory<TModel, TFactoryArgs>
-): ReadonlyModelConstructor<TModel, TFactoryArgs>;
-```
-
-**Motivation:**
-
-In OO-style state management (like MobX), reactive properties are exposed directly on the model for view binding. This creates a problem — external code can mutate them at any time, bypassing the model's methods:
-
-```ts
-// Problem: count is exposed for view binding, but also writable from anywhere
-const CounterModel = createModel(() => {
-  const count = signal(0);
-  return {
-    count,
-    increment() {
-      count.value++;
-    },
-  };
-});
-
-const counter = new CounterModel();
-counter.count.value = 999; // Allowed — bypasses increment, breaks encapsulation
-```
-
-`createReadonlyModel` addresses this at the type level by exposing the model instance as `ReadonlyModel<TModel>`. This keeps the runtime behavior of `createModel`, while providing a readonly API surface to TypeScript consumers:
-
-```ts
-const counter = new CounterModel();
-// counter.count.value = 999; // Type error
-counter.increment(); // Intended mutation path in consuming code
-```
-
-**Behavior:**
-
-- Same factory contract and runtime behavior as `createModel`
-- Returns the original runtime model instance shape; signal properties are **not** wrapped or replaced at runtime
-- Exposes a readonly API surface through `ReadonlyModel<TModel>` typing, so `Signal<T>` properties appear as `ReadonlySignal<T>` to TypeScript consumers
-- This is a compile-time contract, not a runtime mutation seal
-
-**Usage Example: Expose a readonly model surface to TypeScript**
-
-```ts
-import { signal, computed } from '@preact/signals-core';
-import { createReadonlyModel } from '@unsignal/core';
-
-const CounterModel = createReadonlyModel((initial = 0) => {
-  const count = signal(initial);
-  const doubled = computed(() => count.value * 2);
-
-  return {
-    count,
-    doubled,
-    increment() {
-      count.value++;
-    },
-    reset() {
-      count.value = initial;
-    },
-  };
-});
-
-const counter = new CounterModel(5);
-
-console.log(counter.count.value); // 5 — readable
-console.log(counter.doubled.value); // 10 — readable
-
-// counter.count.value = 99; // Type error in TypeScript
-
-counter.increment();
-console.log(counter.count.value); // 6
-
-counter.reset();
-console.log(counter.count.value); // 5
-
-counter[Symbol.dispose]();
 ```
 
 #### `watchEffect`
@@ -243,7 +138,7 @@ function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn;
 **Usage Example: Async task cleanup**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watchEffect } from '@unsignal/core';
 
 const userId = signal(1);
@@ -297,7 +192,7 @@ interface WatchOptions {
 **Usage Example: Watch getter return value changes**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watch } from '@unsignal/core';
 
 const count = signal(0);
@@ -322,7 +217,7 @@ count.value = 3;
 
 #### `resource`
 
-The `Resource` API provides a framework-agnostic async resource primitive for `@unsignal/core` that integrates with `@preact/signals-core`.
+The `Resource` API provides a framework-agnostic async resource primitive for `@unsignal/core` that integrates with `@unsignal/baseline`.
 
 ```mermaid
 classDiagram
@@ -491,7 +386,7 @@ function resource<TParams, TValue>(
 **Usage Example**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { resource } from '@unsignal/core';
 
 interface User {
@@ -517,7 +412,7 @@ const userResource = resource({
 **Usage Example: Legacy Cancellation**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { resource } from '@unsignal/core';
 
 const query = signal<string | undefined>('hello');

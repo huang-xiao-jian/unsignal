@@ -1,6 +1,6 @@
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { describe, expect, it, vi } from 'vitest';
-import { watchEffect } from './watchEffect.js';
+import { watchEffect } from './watchEffect';
 
 describe('watchEffect', () => {
   it('should execute fn immediately on creation', () => {
@@ -30,22 +30,22 @@ describe('watchEffect', () => {
     const count = signal(0);
     const fn = vi.fn(() => void count.value);
 
-    const dispose = watchEffect(fn);
+    const disposable = watchEffect(fn);
     expect(fn).toHaveBeenCalledTimes(1);
 
-    dispose();
+    disposable.dispose();
 
     count.value = 1;
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('should be idempotent when dispose is called multiple times', () => {
-    const dispose = watchEffect(() => {});
+    const disposable = watchEffect(() => {});
 
     expect(() => {
-      dispose();
-      dispose();
-      dispose();
+      disposable.dispose();
+      disposable.dispose();
+      disposable.dispose();
     }).not.toThrow();
   });
 
@@ -78,14 +78,14 @@ describe('watchEffect', () => {
       const count = signal(0);
       const cleanup = vi.fn();
 
-      const dispose = watchEffect((onCleanup) => {
+      const disposable = watchEffect((onCleanup) => {
         void count.value;
         onCleanup(cleanup);
       });
 
       expect(cleanup).not.toHaveBeenCalled();
 
-      dispose();
+      disposable.dispose();
       expect(cleanup).toHaveBeenCalledTimes(1);
     });
 
@@ -111,12 +111,12 @@ describe('watchEffect', () => {
       const cleanup1 = vi.fn();
       const cleanup2 = vi.fn();
 
-      const dispose = watchEffect((onCleanup) => {
+      const disposable = watchEffect((onCleanup) => {
         onCleanup(cleanup1);
         onCleanup(cleanup2);
       });
 
-      dispose();
+      disposable.dispose();
       expect(cleanup1).toHaveBeenCalledTimes(1);
       expect(cleanup2).toHaveBeenCalledTimes(1);
     });

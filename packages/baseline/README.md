@@ -25,13 +25,7 @@ baseline signals created by `signal()`. `isReadonlySignal()` detects read-only
 baseline signals such as values returned by `computed()`.
 
 ```ts
-import {
-  computed,
-  isReadonlySignal,
-  isSignal,
-  isWritableSignal,
-  signal,
-} from '@unsignal/baseline';
+import { computed, isReadonlySignal, isSignal, isWritableSignal, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 const doubled = computed(() => count.value * 2);
@@ -53,15 +47,15 @@ import { effect, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 
-const handle = effect(() => {
+const disposable = effect(() => {
   console.log(count.value);
 });
 
-handle.dispose();
+disposable.dispose();
 // or
-handle.unsubscribe();
+disposable.unsubscribe();
 // or
-handle[Symbol.dispose]();
+disposable[Symbol.dispose]();
 ```
 
 If existing code used `const dispose = effect(...); dispose();`, migrate it to

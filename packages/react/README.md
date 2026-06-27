@@ -1,8 +1,8 @@
 # @unsignal/react
 
-> Signal binding for React 19, powered by [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
+> Signal binding for React 19, powered by [`@unsignal/baseline`](https://github.com/preactjs/signals/tree/main/packages/core).
 
-Provides `mobx-react-lite`-style reactive bridging between `@preact/signals-core` and React's rendering system.
+Provides `mobx-react-lite`-style reactive bridging between `@unsignal/baseline` and React's rendering system.
 
 ## Features
 
@@ -17,13 +17,13 @@ Provides `mobx-react-lite`-style reactive bridging between `@preact/signals-core
 ## Requirements
 
 - **React >= 19**
-- `@preact/signals-core >= 1.14`
+- `@unsignal/baseline >= 1.14`
 - `immer >= 11` for `useSignalState`
 
 ## Installation
 
 ```bash
-pnpm add @preact/signals-core @unsignal/react immer
+pnpm add @unsignal/baseline @unsignal/react immer
 ```
 
 ## API
@@ -46,7 +46,7 @@ function observer<P extends object>(
 ```
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { observer } from '@unsignal/react';
 
 const count = signal(0);
@@ -71,7 +71,7 @@ const Observer: FunctionComponent<ObserverProps>;
 ```
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Observer } from '@unsignal/react';
 
 const count = signal(0);
@@ -92,7 +92,7 @@ Conditionally renders `when` or `fallback` with reactive signal tracking.
 
 ```ts
 import type { ReactNode } from 'react';
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface ShowProps<T> {
   when: ReadonlySignal<T> | T;
@@ -104,7 +104,7 @@ function Show<T>(props: ShowProps<T>): ReactNode;
 ```
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Show } from '@unsignal/react';
 
 const visible = signal(false);
@@ -124,7 +124,7 @@ Renders a reactive list from a signal-backed collection with keyed item tracking
 
 ```ts
 import type { ReactNode } from 'react';
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface ForProps<T> {
   each: ReadonlySignal<readonly T[]> | readonly T[];
@@ -137,7 +137,7 @@ function For<T>(props: ForProps<T>): ReactNode;
 ```
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { For } from '@unsignal/react';
 
 interface Todo {
@@ -169,7 +169,7 @@ Matches reactive cases and renders the first matching branch.
 
 ```ts
 import type { ReactNode } from 'react';
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface CaseProps<T> {
   when: ReadonlySignal<T> | T;
@@ -190,7 +190,7 @@ function Switch<T>(props: SwitchProps<T>): ReactNode;
 **Static children:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Switch } from '@unsignal/react';
 
 type Status = 'loading' | 'success' | 'error';
@@ -220,7 +220,7 @@ function DataView() {
 **Render props:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Switch } from '@unsignal/react';
 
 type Status = 'loading' | 'success' | 'error';
@@ -242,7 +242,7 @@ function DataView() {
 **Custom equality:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Switch } from '@unsignal/react';
 
 interface User {
@@ -271,13 +271,13 @@ function RoleBadge() {
 Reads the current value from a signal and subscribes to changes.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 function useSignalValue<T>(source: ReadonlySignal<T>): T;
 ```
 
 ```tsx
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/react';
 
 const count = signal(0);
@@ -299,7 +299,7 @@ function Counter() {
 Read-write hook for writable signals with immer-powered mutation support.
 
 ```ts
-import type { Signal } from '@preact/signals-core';
+import type { Signal } from '@unsignal/baseline';
 
 type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 
@@ -312,7 +312,7 @@ function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 **Primitive types:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/react';
 
 const count = signal(0);
@@ -331,7 +331,7 @@ function Counter() {
 **Objects / arrays with immer:**
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/react';
 
 interface Todo {
@@ -369,13 +369,13 @@ function TodoList() {
 Runs a side effect that automatically tracks signal dependencies and supports cleanup.
 
 ```ts
-import type { EffectOptions } from '@preact/signals-core';
+import type { EffectOptions } from '@unsignal/baseline';
 
 function useSignalEffect(callback: () => void | (() => void), options?: EffectOptions): void;
 ```
 
 ```tsx
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalEffect } from '@unsignal/react';
 
 const count = signal(0);
@@ -396,7 +396,7 @@ function Logger() {
 Bridges a React-owned value into a readonly signal.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface UseLiveSignalOptions<T> {
   equals?: (previous: T, next: T) => boolean;
@@ -407,7 +407,7 @@ function useLiveSignal<T>(value: T, options?: UseLiveSignalOptions<T>): Readonly
 
 ```tsx
 import { useLiveSignal } from '@unsignal/react';
-import { computed } from '@preact/signals-core';
+import { computed } from '@unsignal/baseline';
 
 interface CounterProps {
   initialCount: number;

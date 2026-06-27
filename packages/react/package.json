@@ -33,10 +33,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@unsignal/baseline": "workspace:*",
     "@unsignal/core": "workspace:*"
   },
   "devDependencies": {
-    "@preact/signals-core": "^1.14.2",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.16",
@@ -46,7 +46,7 @@
     "react-dom": "^19.2.7"
   },
   "peerDependencies": {
-    "@preact/signals-core": "^1.14.2",
+    "@unsignal/baseline": "^1.0.0",
     "immer": "^11.0.0",
     "react": "^19.0.0"
   },

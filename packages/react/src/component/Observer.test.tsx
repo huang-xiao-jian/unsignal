@@ -1,5 +1,5 @@
-import { computed, signal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { computed, signal } from '@unsignal/baseline';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Observer } from './Observer';
 

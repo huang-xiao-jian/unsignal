@@ -1,7 +1,6 @@
+export type { OnCleanup } from './clean';
 export { reaction } from './reaction';
-export type { DisposerFn } from './reaction';
-export { createReadonlyModel, readonly } from './readonly';
-export type { ReadonlyModel, ReadonlyModelConstructor } from './readonly';
+export { readonly } from './readonly';
 export { resource } from './resource';
 export type {
   Aborter,
@@ -16,4 +15,3 @@ export type {
 export { watch } from './watch';
 export type { WatchCallback, WatchOptions } from './watch';
 export { watchEffect } from './watchEffect';
-export type { OnCleanup } from './watchEffect';

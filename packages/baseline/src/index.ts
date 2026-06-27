@@ -752,10 +752,19 @@ type EffectFn =
   | ((this: { dispose: () => void }) => void | (() => void))
   | (() => void | (() => void));
 
-export interface Disposable {
-  dispose(): void;
-  unsubscribe(): void;
-  [Symbol.dispose]: () => void;
+type DisposeFn = () => void;
+class Disposable {
+  constructor(private readonly fn: DisposeFn) {}
+
+  dispose() {
+    this.fn();
+  }
+  unsubscribe() {
+    this.fn();
+  }
+  [Symbol.dispose]() {
+    this.fn();
+  }
 }
 
 /**
@@ -878,6 +887,7 @@ function action<TArgs extends unknown[], TReturn>(
 
 export {
   Computed,
+  Disposable,
   Effect,
   Signal,
   action,
@@ -888,5 +898,6 @@ export {
   isSignal,
   isWritableSignal,
   untracked,
+  type DisposeFn,
   type ReadonlySignal,
 };

@@ -1,6 +1,6 @@
-import { computed, signal } from '@preact/signals-core';
+import { computed, signal } from '@unsignal/baseline';
 import { describe, expect, it, vi } from 'vitest';
-import { watch } from './watch.js';
+import { watch } from './watch';
 
 describe('watch', () => {
   describe('lazy execution', () => {
@@ -117,12 +117,12 @@ describe('watch', () => {
       const count = signal(0);
       const callback = vi.fn();
 
-      const dispose = watch(() => count.value, callback);
+      const disposable = watch(() => count.value, callback);
 
       count.value = 1;
       expect(callback).toHaveBeenCalledTimes(1);
 
-      dispose();
+      disposable.dispose();
 
       count.value = 2;
       expect(callback).toHaveBeenCalledTimes(1);
@@ -130,15 +130,15 @@ describe('watch', () => {
 
     it('should be idempotent when dispose is called multiple times', () => {
       const count = signal(0);
-      const dispose = watch(
+      const disposable = watch(
         () => count.value,
         () => {}
       );
 
       expect(() => {
-        dispose();
-        dispose();
-        dispose();
+        disposable.dispose();
+        disposable.dispose();
+        disposable.dispose();
       }).not.toThrow();
     });
   });
@@ -180,7 +180,7 @@ describe('watch', () => {
       const count = signal(0);
       const cleanup = vi.fn();
 
-      const dispose = watch(
+      const disposable = watch(
         () => count.value,
         (_value, _oldValue, onCleanup) => {
           onCleanup(cleanup);
@@ -190,7 +190,7 @@ describe('watch', () => {
       count.value = 1;
       expect(cleanup).not.toHaveBeenCalled();
 
-      dispose();
+      disposable.dispose();
       expect(cleanup).toHaveBeenCalledTimes(1);
     });
   });
@@ -231,7 +231,7 @@ describe('watch', () => {
       const count = signal(0);
       const cleanup = vi.fn();
 
-      const dispose = watch(
+      const disposable = watch(
         () => count.value,
         (_value, _oldValue, onCleanup) => {
           onCleanup(cleanup);
@@ -241,7 +241,7 @@ describe('watch', () => {
 
       expect(cleanup).not.toHaveBeenCalled();
 
-      dispose();
+      disposable.dispose();
       expect(cleanup).toHaveBeenCalledTimes(1);
     });
   });

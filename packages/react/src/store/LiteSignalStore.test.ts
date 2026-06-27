@@ -1,4 +1,4 @@
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LiteSignalStore } from './LiteSignalStore';

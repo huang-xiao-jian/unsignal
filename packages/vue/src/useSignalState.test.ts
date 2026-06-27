@@ -1,4 +1,4 @@
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { describe, expect, it } from 'vitest';
 import { createSSRApp, defineComponent, effectScope, h, type ShallowRef } from 'vue';
 import { renderToString } from 'vue/server-renderer';

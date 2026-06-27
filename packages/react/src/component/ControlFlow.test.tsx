@@ -1,5 +1,5 @@
-import { signal, type ReadonlySignal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { signal, type ReadonlySignal } from '@unsignal/baseline';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { For } from './For';
 import { Show } from './Show';

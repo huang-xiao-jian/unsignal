@@ -1,5 +1,5 @@
-import { signal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { signal } from '@unsignal/baseline';
 import { StrictMode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSignalEffect } from './useSignalEffect';

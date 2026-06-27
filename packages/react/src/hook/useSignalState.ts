@@ -1,4 +1,4 @@
-import { type Signal } from '@preact/signals-core';
+import { type Signal } from '@unsignal/baseline';
 import { type Draft, produce } from 'immer';
 import { useCallback } from 'react';
 import { useSignalValue } from './useSignalValue';

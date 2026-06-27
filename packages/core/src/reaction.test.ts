@@ -1,6 +1,6 @@
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { describe, expect, it, vi } from 'vitest';
-import { reaction } from './reaction.js';
+import { reaction } from './reaction';
 
 describe('reaction', () => {
   it('should execute fn immediately on creation', () => {
@@ -79,14 +79,14 @@ describe('reaction', () => {
     const fn = vi.fn();
     const callback = vi.fn();
 
-    const dispose = reaction(() => {
+    const disposable = reaction(() => {
       void count.value;
       fn();
     }, callback);
 
     expect(fn).toHaveBeenCalledTimes(1);
 
-    dispose();
+    disposable.dispose();
 
     count.value = 1;
     // fn should NOT be called again after dispose
@@ -96,7 +96,7 @@ describe('reaction', () => {
 
   it('should be idempotent when dispose is called multiple times', () => {
     const count = signal(0);
-    const dispose = reaction(
+    const disposable = reaction(
       () => {
         void count.value;
       },
@@ -104,9 +104,9 @@ describe('reaction', () => {
     );
 
     expect(() => {
-      dispose();
-      dispose();
-      dispose();
+      disposable.dispose();
+      disposable.dispose();
+      disposable.dispose();
     }).not.toThrow();
 
     count.value = 1;

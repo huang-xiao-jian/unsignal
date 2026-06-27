@@ -1,6 +1,6 @@
-import { type ReadonlySignal, untracked } from '@preact/signals-core';
-import type { DisposerFn } from './reaction.js';
-import { type OnCleanup, watchEffect } from './watchEffect.js';
+import { type Disposable, type ReadonlySignal, untracked } from '@unsignal/baseline';
+import { type OnCleanup } from './clean';
+import { watchEffect } from './watchEffect';
 
 export type WatchCallback<T> = (value: T, oldValue: T, onCleanup: OnCleanup) => void;
 
@@ -12,17 +12,17 @@ export function watch<T>(
   source: ReadonlySignal<T>,
   callback: WatchCallback<T>,
   options?: WatchOptions
-): DisposerFn;
+): Disposable;
 export function watch<T>(
   source: () => T,
   callback: WatchCallback<T>,
   options?: WatchOptions
-): DisposerFn;
+): Disposable;
 export function watch<T>(
   source: ReadonlySignal<T> | (() => T),
   callback: WatchCallback<T>,
   options?: WatchOptions
-): DisposerFn {
+): Disposable {
   const getter = typeof source === 'function' ? source : () => source.value;
 
   let isFirst = true;

@@ -32,12 +32,11 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@preact/signals-core": "^1.14.2",
-    "@types/node": "^22.0.0"
+  "dependencies": {
+    "@unsignal/baseline": "workspace:*"
   },
-  "peerDependencies": {
-    "@preact/signals-core": "^1.14.2"
+  "devDependencies": {
+    "@types/node": "^22.0.0"
   },
   "publishConfig": {
     "access": "public",

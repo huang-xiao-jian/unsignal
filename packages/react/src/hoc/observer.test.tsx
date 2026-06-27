@@ -1,5 +1,5 @@
-import { batch, computed, signal } from '@preact/signals-core';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { batch, computed, signal } from '@unsignal/baseline';
 import { StrictMode, useState, type FunctionComponent } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';

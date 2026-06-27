@@ -1,8 +1,8 @@
 # @unsignal/vue
 
-> Signal binding for Vue 3, powered by [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
+> Signal binding for Vue 3, powered by [`@unsignal/baseline`](https://github.com/preactjs/signals/tree/main/packages/core).
 
-Provides `mobx-vue-lite`-style reactive bridging between `@preact/signals-core` and Vue 3's reactivity system.
+Provides `mobx-vue-lite`-style reactive bridging between `@unsignal/baseline` and Vue 3's reactivity system.
 
 ## Features
 
@@ -17,13 +17,13 @@ Provides `mobx-vue-lite`-style reactive bridging between `@preact/signals-core` 
 ## Requirements
 
 - **Vue >= 3.5**
-- `@preact/signals-core >= 1.14`
+- `@unsignal/baseline >= 1.14`
 - `immer >= 11` for `useSignalState`
 
 ## Installation
 
 ```bash
-pnpm add @preact/signals-core @unsignal/vue immer
+pnpm add @unsignal/baseline @unsignal/vue immer
 ```
 
 ## API
@@ -33,7 +33,7 @@ pnpm add @preact/signals-core @unsignal/vue immer
 Bridges a `Signal<T>` into a `Readonly<ShallowRef<T>>`.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 import type { Readonly, ShallowRef } from 'vue';
 
 function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
@@ -41,7 +41,7 @@ function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 
 ```vue
 <script setup lang="ts">
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
@@ -62,7 +62,7 @@ const doubledValue = useSignalValue(doubled);
 Bridges a writable `Signal<T>` into a readonly `ShallowRef<T>` plus a mutator.
 
 ```ts
-import type { Signal } from '@preact/signals-core';
+import type { Signal } from '@unsignal/baseline';
 import type { Readonly, ShallowRef } from 'vue';
 
 type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
@@ -74,7 +74,7 @@ function useSignalState<T>(source: Signal<T>): [Readonly<ShallowRef<T>>, Mutator
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/vue';
 
 const count = signal(0);
@@ -91,7 +91,7 @@ const [value, mutate] = useSignalState(count);
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/vue';
 
 interface Todo {
@@ -128,7 +128,7 @@ A renderless component that tracks signal reads in its default slot.
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Observer } from '@unsignal/vue';
 
 const count = signal(0);
@@ -166,7 +166,7 @@ The `ShallowRef` returned by `useSignalValue` works with `watch`, `computed`, an
 
 ```ts
 import { watch, computed as vueComputed } from 'vue';
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);

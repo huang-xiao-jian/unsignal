@@ -1,4 +1,4 @@
-import { effect, type EffectOptions } from '@preact/signals-core';
+import { effect, type EffectOptions } from '@unsignal/baseline';
 import { useEffect, useRef } from 'react';
 
 export function useSignalEffect(
@@ -11,5 +11,11 @@ export function useSignalEffect(
   callbackRef.current = callback;
   optionsRef.current = options;
 
-  useEffect(() => effect(() => callbackRef.current(), optionsRef.current), []);
+  useEffect(() => {
+    const disposable = effect(() => callbackRef.current(), optionsRef.current);
+
+    return () => {
+      disposable.dispose();
+    };
+  }, []);
 }

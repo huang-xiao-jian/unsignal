@@ -1,13 +1,18 @@
-import { effect, type ReadonlySignal } from '@preact/signals-core';
+import { effect, type ReadonlySignal } from '@unsignal/baseline';
 import { useCallback, useSyncExternalStore } from 'react';
 
 export function useSignalValue<T>(source: ReadonlySignal<T>): T {
   const subscribe = useCallback(
-    (onStoreChange: () => void) =>
-      effect(() => {
+    (onStoreChange: () => void) => {
+      const disposable = effect(() => {
         void source.value;
         onStoreChange();
-      }),
+      });
+
+      return () => {
+        disposable.dispose();
+      };
+    },
     [source]
   );
   const getSnapshot = useCallback(() => source.value, [source]);

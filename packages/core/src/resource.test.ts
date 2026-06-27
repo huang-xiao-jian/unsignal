@@ -1,12 +1,7 @@
-import { signal, type ReadonlySignal } from '@preact/signals-core';
+import { signal, type ReadonlySignal } from '@unsignal/baseline';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import type { Aborter, Resource, ResourceLoaderParams, ResourceStatus } from './resource.js';
-import {
-  ResourceParamsInterpreter,
-  ResourceTask,
-  ResourceTaskRunner,
-  resource,
-} from './resource.js';
+import type { Aborter, Resource, ResourceLoaderParams, ResourceStatus } from './resource';
+import { ResourceParamsInterpreter, ResourceTask, ResourceTaskRunner, resource } from './resource';
 
 interface Deferred<T> {
   promise: Promise<T>;

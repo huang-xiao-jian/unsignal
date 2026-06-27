@@ -1,4 +1,4 @@
-import { computed, effect, signal, untracked, type ReadonlySignal } from '@preact/signals-core';
+import { computed, effect, signal, untracked, type ReadonlySignal } from '@unsignal/baseline';
 
 export type ResourceStatus = 'idle' | 'loading' | 'reloading' | 'resolved' | 'error';
 
@@ -208,12 +208,15 @@ class ResourceController<TParams, TValue> implements Resource<TValue | undefined
       () => this.status$.value === 'loading' || this.status$.value === 'reloading'
     );
 
-    this.stopTracking = effect(() => {
+    const disposable = effect(() => {
       const nextParams = this.paramsInterpreter.interpret();
       untracked(() => {
         this.handleParamsChange(nextParams);
       });
     });
+    this.stopTracking = () => {
+      disposable.dispose();
+    };
   }
 
   public hasValue(this: Resource<TValue | undefined>): this is Resource<Exclude<TValue, undefined>>;

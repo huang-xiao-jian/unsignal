@@ -1,6 +1,6 @@
 # @unsignal/core
 
-Framework-agnostic reactive utilities that extend [`@preact/signals-core`](https://github.com/preactjs/signals/tree/main/packages/core).
+Framework-agnostic reactive utilities that compose with [`@unsignal/baseline`](../baseline/README.md).
 
 ## Installation
 
@@ -8,7 +8,7 @@ Framework-agnostic reactive utilities that extend [`@preact/signals-core`](https
 pnpm add @unsignal/core
 ```
 
-> `@preact/signals-core` is required as a peer dependency.
+> `@unsignal/baseline` is required as a peer dependency.
 
 ## API
 
@@ -17,7 +17,7 @@ pnpm add @unsignal/core
 Create a derived read-only signal from a writable or read-only source signal.
 
 ```ts
-import type { ReadonlySignal, Signal } from '@preact/signals-core';
+import type { ReadonlySignal, Signal } from '@unsignal/baseline';
 
 function readonly<T>(source: Signal<T>): ReadonlySignal<T>;
 function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
@@ -28,7 +28,7 @@ function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
 - When the source is already a `ReadonlySignal<T>`, the result still mirrors it but is not the same instance
 
 ```ts
-import { computed, signal } from '@preact/signals-core';
+import { computed, signal } from '@unsignal/baseline';
 import { readonly } from '@unsignal/core';
 
 const count = signal(1);
@@ -44,76 +44,28 @@ console.log(doubledView === doubled); // false
 console.log(doubledView.value); // 4
 ```
 
-### `ReadonlyModel<TModel>`
+### Baseline-native readonly composition
 
-Utility type that recursively maps `Signal<T>` properties in a model to `ReadonlySignal<T>`, while preserving methods, nested objects, existing `ReadonlySignal`s, and the original model disposal contract.
+`@unsignal/core` no longer exports model-construction helpers. Compose writable and readonly state directly with baseline primitives and `readonly()`:
 
 ```ts
-import type { Model, ReadonlySignal, Signal } from '@preact/signals-core';
+import { computed, signal } from '@unsignal/baseline';
+import { readonly } from '@unsignal/core';
 
-type ReadonlyModelFields<TModel> = {
-  [Key in keyof TModel]: TModel[Key] extends ReadonlySignal<unknown>
-    ? TModel[Key]
-    : TModel[Key] extends Signal<infer U>
-      ? ReadonlySignal<U>
-      : TModel[Key] extends (...args: any[]) => any
-        ? TModel[Key]
-        : TModel[Key] extends object
-          ? ReadonlyModel<TModel[Key]>
-          : TModel[Key];
+const count = signal(1);
+const doubled = computed(() => count.value * 2);
+
+const counter = {
+  count: readonly(count),
+  doubled,
+  increment() {
+    count.value += 1;
+  },
 };
-
-type ReadonlyModel<TModel> = Omit<Model<TModel>, keyof TModel> & ReadonlyModelFields<TModel>;
-```
-
-### `createReadonlyModel(factory)`
-
-Create a model constructor with a readonly TypeScript surface for signal properties.
-
-```ts
-import type { ModelFactory } from '@preact/signals-core';
-
-type ReadonlyModelConstructor<TModel, TFactoryArgs extends any[] = []> = new (
-  ...args: TFactoryArgs
-) => ReadonlyModel<TModel>;
-
-function createReadonlyModel<TModel, TFactoryArgs extends any[] = []>(
-  modelFactory: ModelFactory<TModel, TFactoryArgs>
-): ReadonlyModelConstructor<TModel, TFactoryArgs>;
-```
-
-- Uses the same runtime behavior as `createModel`
-- Returns the original runtime model instance shape
-- Does not wrap or replace runtime signal objects
-- Exposes `Signal<T>` properties as `ReadonlySignal<T>` to TypeScript consumers
-- Acts as a compile-time API contract, not a runtime mutation seal
-
-```ts
-import { computed, signal } from '@preact/signals-core';
-import { createReadonlyModel } from '@unsignal/core';
-
-const CounterModel = createReadonlyModel((initial = 0) => {
-  const count = signal(initial);
-  const doubled = computed(() => count.value * 2);
-
-  return {
-    count,
-    doubled,
-    increment() {
-      count.value += 1;
-    },
-  };
-});
-
-const counter = new CounterModel(1);
-
-console.log(counter.count.value); // 1
-console.log(counter.doubled.value); // 2
-
-// counter.count.value = 3; // Type error in TypeScript
 
 counter.increment();
 console.log(counter.count.value); // 2
+console.log(counter.doubled.value); // 4
 ```
 
 ### `resource(options)`
@@ -121,7 +73,7 @@ console.log(counter.count.value); // 2
 Create a reactive async resource that loads whenever its params become defined and exposes signal-based request state.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 type ResourceStatus = 'idle' | 'loading' | 'reloading' | 'resolved' | 'error';
 
@@ -179,7 +131,7 @@ function resource<TParams, TValue>(
 - Supports `destroy()` to stop tracking and abort the active run
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { resource } from '@unsignal/core';
 
 const userId = signal<number | undefined>(1);
@@ -229,7 +181,7 @@ function reaction(fn: () => void, callback: () => void): DisposerFn;
 - `callback` runs untracked, so reads inside it do not create dependencies
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { reaction } from '@unsignal/core';
 
 const count = signal(0);
@@ -272,7 +224,7 @@ function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn;
 - Calls cleanup before the next run and on disposal
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watchEffect } from '@unsignal/core';
 
 const userId = signal(1);
@@ -302,7 +254,7 @@ dispose();
 Watch a signal or getter and run a callback when the value changes.
 
 ```ts
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 import type { DisposerFn, OnCleanup } from '@unsignal/core';
 
 type WatchCallback<T> = (value: T, oldValue: T, onCleanup: OnCleanup) => void;
@@ -324,7 +276,7 @@ function watch<T>(
 - Uses `Object.is` for change detection
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watch } from '@unsignal/core';
 
 const count = signal(0);
@@ -351,7 +303,7 @@ count.value = 3;
 **Watching a `ReadonlySignal`:**
 
 ```ts
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { watch } from '@unsignal/core';
 
 const count = signal(0);
@@ -373,7 +325,7 @@ dispose();
 **Async task cleanup with `watch`:**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watch } from '@unsignal/core';
 
 const userId = signal(1);
@@ -403,7 +355,7 @@ dispose();
 **Using the `immediate` option:**
 
 ```ts
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { watch } from '@unsignal/core';
 
 const count = signal(0);

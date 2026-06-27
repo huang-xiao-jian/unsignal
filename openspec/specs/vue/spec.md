@@ -2,7 +2,7 @@
 
 ## Business Objective
 
-Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-style `@preact/signals-core` reactive bridging capabilities
+Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-style `@unsignal/baseline` reactive bridging capabilities
 
 ## Business Requirements
 
@@ -14,9 +14,9 @@ Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-sty
 
 ### Design Principles
 
-- Bridge `@preact/signals-core`'s `Signal` into a `ShallowRef` recognizable by the `Vue 3` reactive system, enabling seamless usage of `Signal` in templates, `watch`, `computed`, and other scenarios
-- Focused complementary functionality, without duplicating `@preact/signals-core`'s existing primitives (`signal` / `computed` / `effect`); `APIs` are not re-exported
-- Only use `@preact/signals-core` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of the non-public `subscribe()` method is strictly prohibited**
+- Bridge `@unsignal/baseline`'s `Signal` into a `ShallowRef` recognizable by the `Vue 3` reactive system, enabling seamless usage of `Signal` in templates, `watch`, `computed`, and other scenarios
+- Focused complementary functionality, without duplicating `@unsignal/baseline`'s existing primitives (`signal` / `computed` / `effect`); `APIs` are not re-exported
+- Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of the non-public `subscribe()` method is strictly prohibited**
 - Use `effect()` to implement Signal → Vue reactive system bridging: read `signal.value` inside the `effect` callback to establish dependency tracking; when the signal changes, `effect` automatically re-executes and syncs the new value to `shallowRef`
 - All `signal` subscriptions are automatically managed, cleaned up via the `dispose` function returned by `effect()` through `onScopeDispose`, preventing memory leaks
 
@@ -28,7 +28,7 @@ Bridges `Signal<T>` into a `Readonly ShallowRef<T>`. Automatically tracks `signa
 
 ```ts
 import type { ShallowRef } from 'vue';
-import type { ReadonlySignal } from '@preact/signals-core';
+import type { ReadonlySignal } from '@unsignal/baseline';
 
 function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 ```
@@ -37,7 +37,7 @@ function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 
 ```vue
 <script setup lang="ts">
-import { signal, computed } from '@preact/signals-core';
+import { signal, computed } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
@@ -59,7 +59,7 @@ Bridges a writable `Signal<T>` into a `Vue` readonly `ShallowRef<T>`, providing 
 
 ```ts
 import type { ShallowRef } from 'vue';
-import type { Signal } from '@preact/signals-core';
+import type { Signal } from '@unsignal/baseline';
 
 type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 
@@ -79,7 +79,7 @@ function useSignalState<T>(source: Signal<T>): [Readonly<ShallowRef<T>>, Mutator
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/vue';
 
 const count = signal(0);
@@ -96,7 +96,7 @@ const [value, mutate] = useSignalState(count);
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalState } from '@unsignal/vue';
 
 interface Todo {
@@ -145,7 +145,7 @@ Renderless `Vue` component that wraps the default slot into a reactive rendering
 
 ```vue
 <script setup lang="ts">
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { Observer } from '@unsignal/vue';
 
 const count = signal(0);
@@ -181,7 +181,7 @@ The `ShallowRef` returned by `useSignalValue` integrates seamlessly with the `Vu
 
 ```ts
 import { watch, computed as vueComputed } from 'vue';
-import { signal } from '@preact/signals-core';
+import { signal } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);

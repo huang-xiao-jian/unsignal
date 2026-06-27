@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { computed, signal } from '@preact/signals-core';
+import { computed, signal } from '@unsignal/baseline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp, defineComponent, nextTick, type App, type VNode } from 'vue';
 import { Observer } from './Observer';

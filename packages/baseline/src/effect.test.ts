@@ -257,11 +257,11 @@ describe('effect()', () => {
   it('should call the cleanup callback function when disposed', () => {
     const spy = vi.fn();
 
-    const handle = effect(() => {
+    const disposable = effect(() => {
       return spy;
     });
     expect(spy).not.toHaveBeenCalled();
-    handle.dispose();
+    disposable.dispose();
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -550,9 +550,9 @@ describe('effect()', () => {
   });
 
   it('should allow disposing the effect multiple times', () => {
-    const handle = effect(() => undefined);
-    handle.dispose();
-    expect(() => handle.dispose()).not.to.throw();
+    const disposable = effect(() => undefined);
+    disposable.dispose();
+    expect(() => disposable.dispose()).not.to.throw();
   });
 
   it('should support resource management disposal', () => {
@@ -570,9 +570,9 @@ describe('effect()', () => {
   it('should allow disposing a running effect', () => {
     const a = signal(0);
     const spy = vi.fn();
-    const handle = effect(() => {
+    const disposable = effect(() => {
       if (a.value === 1) {
-        handle.dispose();
+        disposable.dispose();
         spy();
       }
     });

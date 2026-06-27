@@ -1,11 +1,9 @@
-import { effect, untracked } from '@preact/signals-core';
+import { effect, untracked, type Disposable } from '@unsignal/baseline';
 
-export type DisposerFn = () => void;
-
-export function reaction(fn: () => void, callback: () => void): DisposerFn {
+export function reaction(fn: () => void, callback: () => void): Disposable {
   let isFirstRun = true;
 
-  const dispose = effect(() => {
+  const disposable = effect(() => {
     fn();
     if (isFirstRun) {
       isFirstRun = false;
@@ -14,5 +12,5 @@ export function reaction(fn: () => void, callback: () => void): DisposerFn {
     }
   });
 
-  return dispose;
+  return disposable;
 }
