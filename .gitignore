@@ -172,6 +172,9 @@ dist/
 # neovate
 .log-outputs
 
+# OpenSpec working changes
+openspec/changes/
+
 # angular
 .angular
 
