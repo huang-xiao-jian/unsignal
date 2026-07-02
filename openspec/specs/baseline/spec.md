@@ -2,7 +2,7 @@
 
 ## Business Objective
 
-Implement a builtin `Signal Primitive` package that can take the place of `@preact/signals-core` for the `unsignal` ecosystem.
+Implement a builtin `Signal Primitive` package for the `unsignal` ecosystem.
 
 ## Business Requirements
 
@@ -16,7 +16,7 @@ Implement a builtin `Signal Primitive` package that can take the place of `@prea
 ### Design Principles
 
 - `@unsignal/baseline` provides only primitive reactive capabilities
-- The package exposes the same core mental model as `@preact/signals-core`: writable signals, derived signals, side effects, batching, and tracking control
+- The package exposes the core signal primitive mental model: writable signals, derived signals, side effects, batching, and tracking control
 - `computed` is read-only and lazily evaluated
 - `batch` groups multiple writes into one visible update cycle
 - `untracked` allows reading signals without collecting dependencies
@@ -46,7 +46,7 @@ The `@unsignal/baseline` runtime SHALL implement its writable signal and derived
 
 ### Requirement: Baseline signals use unsignal-owned runtime branding
 
-The `@unsignal/baseline` package SHALL use unsignal-owned runtime branding for its signal primitives instead of `preact`-named shared symbols. Writable signals and read-only computed signals MAY use distinct internal brand symbols so long as the supported runtime guard APIs continue to distinguish them correctly.
+The `@unsignal/baseline` package SHALL use unsignal-owned runtime branding for its signal primitives. Writable signals and read-only computed signals MAY use distinct internal brand symbols so long as the supported runtime guard APIs continue to distinguish them correctly.
 
 #### Scenario: Writable signals use an unsignal-owned writable brand
 

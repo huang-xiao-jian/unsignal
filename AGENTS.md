@@ -6,7 +6,7 @@ Senior full-stack development engineer, proficient in business modeling and laye
 
 ## Goal
 
-Extend the original `Signal Primitive` from [@preact/signals-core](https://github.com/preactjs/signals/tree/main/packages/core) without reduplicated
+Extend the original `Signal Primitive` without reduplicated
 
 ## Tech Stack
 
@@ -24,12 +24,12 @@ Extend the original `Signal Primitive` from [@preact/signals-core](https://githu
 
 The function is divided into multiple sub-packages. the prefix will be uniformly set as: `unsignal` (e.g. `@unsignal/react`)
 
-| Package              | Responsibility                                                |
-| :------------------- | :------------------------------------------------------------ |
-| `@unsignal/vue`      | Signal binding for Vue3                                       |
-| `@unsignal/react`    | Signal binding for React19                                    |
-| `@unsignal/core`     | Signal enhancement for original                               |
-| `@unsignal/baseline` | Signal builtin-implementation to replace @preact/signals-core |
+| Package              | Responsibility                  |
+| :------------------- | :------------------------------ |
+| `@unsignal/vue`      | Signal binding for Vue3         |
+| `@unsignal/react`    | Signal binding for React19      |
+| `@unsignal/core`     | Signal enhancement for original |
+| `@unsignal/baseline` | Signal builtin-implementation   |
 
 > NOTE: The `@unsignal/baseline` remains WIP status, it doesn't have downsteram dependency yet!
 

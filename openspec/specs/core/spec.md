@@ -435,7 +435,7 @@ const searchResource = resource({
 
 ### Requirement: Core utilities target baseline primitives
 
-`@unsignal/core` SHALL define its public signal utility APIs against `@unsignal/baseline` primitives instead of `@preact/signals-core`.
+`@unsignal/core` SHALL define its public signal utility APIs against `@unsignal/baseline` primitives.
 
 #### Scenario: Core APIs accept writable and readonly baseline signals
 
@@ -445,7 +445,7 @@ const searchResource = resource({
 #### Scenario: Core documentation describes baseline as the primitive dependency
 
 - **WHEN** a consumer reads the package documentation or installation guidance for `@unsignal/core`
-- **THEN** the package MUST describe `@unsignal/baseline` as the supported primitive dependency and MUST NOT instruct consumers to install or import `@preact/signals-core`
+- **THEN** the package MUST describe `@unsignal/baseline` as the supported primitive dependency
 
 ### Requirement: Core excludes baseline-incompatible model helpers
 

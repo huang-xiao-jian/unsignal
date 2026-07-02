@@ -1,6 +1,6 @@
 # unsignal
 
-Composable signal bindings for frontend frameworks, built on top of [@preact/signals-core](https://github.com/preactjs/signals).
+Composable signal bindings for frontend frameworks, built on top of `@unsignal/baseline`.
 
 ## Packages
 

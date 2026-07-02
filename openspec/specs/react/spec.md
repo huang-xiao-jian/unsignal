@@ -394,12 +394,12 @@ function UserView({ user }: { user: User }) {
 
 ### Requirement: React bridge targets baseline primitives
 
-`@unsignal/react` SHALL provide its React bridge APIs for signals created by `@unsignal/baseline` instead of `@preact/signals-core`.
+`@unsignal/react` SHALL provide its React bridge APIs for signals created by `@unsignal/baseline`.
 
 #### Scenario: React hooks and components accept baseline signals
 
 - **WHEN** a consumer passes a writable or readonly signal created by `@unsignal/baseline` into `observer`, `Observer`, `useSignalValue`, `useSignalState`, `useSignalEffect`, `Show`, `For`, `Switch`, or `useLiveSignal`-driven flows
-- **THEN** the documented and supported behavior MUST operate on baseline signal primitives without requiring `@preact/signals-core`
+- **THEN** the documented and supported behavior MUST operate on baseline signal primitives
 
 #### Scenario: React package guidance points to baseline
 
