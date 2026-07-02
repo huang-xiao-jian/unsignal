@@ -14,7 +14,8 @@
     "isolatedModules": true,
     "paths": {
       "@unsignal/baseline": ["./packages/baseline/src/index.ts"],
-      "@unsignal/core": ["./packages/core/src/index.ts"]
+      "@unsignal/core": ["./packages/core/src/index.ts"],
+      "@unsignal/core/mobx": ["./packages/core/src/mobx.ts"]
     }
   }
 }

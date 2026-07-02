@@ -460,3 +460,116 @@ const searchResource = resource({
 
 - **WHEN** a consumer migrates away from removed model-helper APIs
 - **THEN** the package guidance MUST direct them to explicit classes, factory functions, or plain objects composed from baseline `signal`, `computed`, and `readonly` primitives
+
+### Requirement: Core exposes MobX decorator subpath
+
+`@unsignal/core` SHALL expose a separate `@unsignal/core/mobx` subpath for MobX-flavored decorators without adding those decorators to the root `@unsignal/core` export.
+
+#### Scenario: Import decorators from subpath
+
+- **WHEN** a consumer imports MobX-flavored decorators from `@unsignal/core/mobx`
+- **THEN** the package resolves runtime code and TypeScript declarations for that subpath
+
+#### Scenario: Export subpath uses compiled files
+
+- **WHEN** the package export map declares `@unsignal/core/mobx`
+- **THEN** its runtime and type declaration targets point to compiled files under `dist` rather than source files
+
+#### Scenario: Root export remains unchanged
+
+- **WHEN** a consumer imports from `@unsignal/core`
+- **THEN** the MobX-flavored decorators are not part of the root export surface
+
+### Requirement: Core build compiles multiple entry points
+
+`@unsignal/core` SHALL configure its `tsdown` build with explicit entries for both the root API and the MobX decorator subpath.
+
+#### Scenario: Build emits root entry
+
+- **WHEN** the core package build completes
+- **THEN** compiled runtime and type declaration files exist for the root `@unsignal/core` entry
+
+#### Scenario: Build emits MobX entry
+
+- **WHEN** the core package build completes
+- **THEN** compiled runtime and type declaration files exist for the `@unsignal/core/mobx` entry
+
+### Requirement: Observable accessor decorator hides signal storage
+
+The MobX flavor SHALL provide an `observable` decorator for 2022 Stage 3 class accessors that stores each instance value in reactive signal-backed state while exposing normal property reads and writes.
+
+#### Scenario: Read initialized observable accessor
+
+- **WHEN** a class instance reads an `@observable accessor` initialized with a value
+- **THEN** the read returns the initialized value rather than a signal object
+
+#### Scenario: Write observable accessor
+
+- **WHEN** a class instance assigns a new value to an `@observable accessor`
+- **THEN** subsequent reads return the assigned value and reactive dependents are notified
+
+#### Scenario: Keep instance state isolated
+
+- **WHEN** two instances of the same decorated class use the same `@observable accessor`
+- **THEN** writes on one instance do not change the value observed on the other instance
+
+### Requirement: Computed getter decorator exposes derived values
+
+The MobX flavor SHALL provide a `computed` decorator for 2022 Stage 3 class getters that exposes the getter result as a normal value backed by per-instance computed reactive state.
+
+#### Scenario: Read computed getter
+
+- **WHEN** a class instance reads an `@computed` getter that derives from observable accessors
+- **THEN** the read returns the derived value rather than a readonly signal object
+
+#### Scenario: Recompute after dependency change
+
+- **WHEN** an observable accessor read by an `@computed` getter changes
+- **THEN** subsequent reads of the computed getter return a value derived from the latest observable state
+
+#### Scenario: Keep computed state isolated
+
+- **WHEN** two instances of the same decorated class read the same `@computed` getter
+- **THEN** each instance derives from its own observable state
+
+### Requirement: Action method decorator batches mutations
+
+The MobX flavor SHALL provide an `action` decorator for 2022 Stage 3 class methods that runs the original method as a baseline action while preserving the method receiver, arguments, and return value.
+
+#### Scenario: Invoke action method
+
+- **WHEN** a decorated action method is invoked with arguments
+- **THEN** the original method receives the same `this` value and arguments and the caller receives the original return value
+
+#### Scenario: Batch action writes
+
+- **WHEN** a decorated action method performs multiple observable writes
+- **THEN** reactive effects observe the resulting updates according to `@unsignal/baseline` action batching semantics
+
+### Requirement: Bound action method decorator preserves instance binding
+
+The MobX flavor SHALL provide `action.bound` for 2022 Stage 3 class methods that binds the decorated method to its instance while preserving baseline action behavior.
+
+#### Scenario: Invoke extracted bound action method
+
+- **WHEN** an `@action.bound` method is read from an instance and invoked without an explicit receiver
+- **THEN** the original method still executes with `this` bound to that instance
+
+#### Scenario: Bound action batches writes
+
+- **WHEN** an `@action.bound` method performs multiple observable writes
+- **THEN** reactive effects observe the resulting updates according to `@unsignal/baseline` action batching semantics
+
+### Requirement: MobX flavor supports only 2022 Stage 3 decorators
+
+The MobX flavor SHALL support only the 2022 Stage 3 decorator forms required for class accessors, getters, and methods.
+
+#### Scenario: Use standard accessor syntax
+
+- **WHEN** a consumer writes `@observable accessor value = initialValue`
+- **THEN** the decorator is valid for the supported observable field API
+
+#### Scenario: Exclude legacy property decorators
+
+- **WHEN** a consumer attempts to use legacy property decorator syntax such as `@observable value = initialValue`
+- **THEN** the API does not promise support for that form

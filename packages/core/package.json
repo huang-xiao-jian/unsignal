@@ -17,6 +17,10 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
+    "./mobx": {
+      "types": "./dist/mobx.d.mts",
+      "import": "./dist/mobx.mjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",

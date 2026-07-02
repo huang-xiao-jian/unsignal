@@ -864,11 +864,7 @@ function effect(fn: EffectFn, options?: EffectOptions): Disposable {
     throw err;
   }
   const dispose = effect._dispose.bind(effect);
-  return {
-    dispose,
-    unsubscribe: dispose,
-    [Symbol.dispose]: dispose,
-  };
+  return new Disposable(dispose);
 }
 
 //#endregion Effect

@@ -173,7 +173,7 @@ dist/
 .log-outputs
 
 # OpenSpec working changes
-openspec/changes/
+openspec/changes/archive
 
 # angular
 .angular
