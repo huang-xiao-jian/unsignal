@@ -92,6 +92,30 @@ The `@unsignal/baseline` package SHALL export `isSignal`, `isReadonlySignal`, an
 - **WHEN** a caller passes a non-signal value or an object that only partially resembles the signal API to `isSignal`, `isReadonlySignal`, or `isWritableSignal`
 - **THEN** each guard MUST return `false`
 
+### Requirement: Baseline effects expose resource-oriented disposal semantics
+
+The `@unsignal/baseline` package SHALL return a resource-oriented handle from `effect()` so effect teardown can be managed consistently with other disposable and unsubscribable resources. The returned handle SHALL expose `dispose()`, `unsubscribe()`, and `Symbol.dispose`, and each entry point SHALL perform the same underlying teardown behavior.
+
+#### Scenario: Effect handle is stored as a managed resource
+
+- **WHEN** a caller stores the value returned from `effect()` for later teardown
+- **THEN** the returned value MUST be an object resource rather than a callable teardown function
+
+#### Scenario: Effect handle supports symbol-based disposal
+
+- **WHEN** a caller invokes the returned handle through `Symbol.dispose`
+- **THEN** the effect MUST stop tracking, run pending cleanup exactly once, and release its subscriptions
+
+#### Scenario: Effect handle represents unsubscribable ownership
+
+- **WHEN** a caller manages the returned handle alongside other unsubscribable resources
+- **THEN** the effect handle MUST expose teardown semantics equivalent to unsubscribing the effect from future updates
+
+#### Scenario: Named teardown methods are equivalent
+
+- **WHEN** a caller invokes `dispose()` or `unsubscribe()` on the returned handle
+- **THEN** each method MUST perform the same teardown behavior as `Symbol.dispose`
+
 ### Exported Types
 
 #### `SignalOptions`
@@ -264,7 +288,7 @@ function effect(
 - tracks signals read during execution
 - re-runs when tracked dependencies change
 - may return a cleanup function
-- returns a disposable resource handle that stops further tracking and cleanup
+- returns an object resource handle that stops further tracking and cleanup
 - exposes equivalent `dispose()`, `unsubscribe()`, and `Symbol.dispose` teardown entry points
 
 **Usage Example:**

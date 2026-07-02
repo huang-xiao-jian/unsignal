@@ -221,6 +221,7 @@ function useSignalEffect(callback: () => void | (() => void), options?: EffectOp
 - Auto-tracks any `signal.value` read inside `callback`; re-runs on change
 - Supports an optional cleanup function; disposed on unmount
 - Passes `options` to the underlying `effect()` when the inner signal effect is created
+- Treats the underlying `effect()` return value as a disposable resource handle rather than a callable teardown function
 - React re-renders, including options object identity changes, do not recreate the inner signal effect
 
 **Usage Example:**

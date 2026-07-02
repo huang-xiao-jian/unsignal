@@ -18,7 +18,7 @@ Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-sty
 - Focused complementary functionality, without duplicating `@unsignal/baseline`'s existing primitives (`signal` / `computed` / `effect`); `APIs` are not re-exported
 - Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of the non-public `subscribe()` method is strictly prohibited**
 - Use `effect()` to implement Signal → Vue reactive system bridging: read `signal.value` inside the `effect` callback to establish dependency tracking; when the signal changes, `effect` automatically re-executes and syncs the new value to `shallowRef`
-- All `signal` subscriptions are automatically managed, cleaned up via the `dispose` function returned by `effect()` through `onScopeDispose`, preventing memory leaks
+- All `signal` subscriptions are automatically managed, cleaned up through the disposable resource handle returned by `effect()` via `onScopeDispose`, preventing memory leaks
 
 ### API Reference
 
