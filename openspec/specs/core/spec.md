@@ -18,12 +18,12 @@ Provide framework-agnostic reactive utilities that compose with `@unsignal/basel
 
 ### Types
 
-#### `DisposerFn`
+#### `Disposable`
 
-Function type that stops reactive tracking and cleans up side effects
+Resource-oriented handle type that stops reactive tracking and cleans up side effects
 
 ```ts
-type DisposerFn = () => void;
+import type { Disposable } from '@unsignal/baseline';
 ```
 
 #### `OnCleanup`
@@ -39,14 +39,14 @@ type OnCleanup = (cleanupFn: () => void) => void;
 #### `reaction`
 
 ```ts
-function reaction(fn: () => void, callback: () => void): DisposerFn;
+function reaction(fn: () => void, callback: () => void): Disposable;
 ```
 
 **Behavior:**
 
 - The `fn` parameter behaves exactly the same as `effect(fn)`: executes immediately, automatically tracks `signal` dependencies read inside, and re-executes when dependencies change
 - The `callback` parameter: only called when `fn` re-executes due to dependency changes, **not triggered on initial execution**, and **the callback function does not trigger dependency tracking**
-- Returns `DisposerFn`, see type declaration for semantics
+- Returns `Disposable`, using the same resource-oriented disposal semantics as `@unsignal/baseline` `effect()`
 
 **Usage Example: Track `signal` changes and execute callback**
 
@@ -126,14 +126,14 @@ const ro = readonly(doubled);
 #### `watchEffect`
 
 ```ts
-function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn;
+function watchEffect(fn: (onCleanup: OnCleanup) => void): Disposable;
 ```
 
 **Behavior:**
 
 - The `fn` parameter: executes immediately, automatically tracks `signal` dependencies read inside, and re-executes when dependencies change
-- The `onCleanup` parameter: registers a cleanup function that is called **before the next `fn` re-execution** and **when `DisposerFn` is called**, used for canceling stale async tasks and other side effects
-- Returns `DisposerFn`, see type declaration for semantics
+- The `onCleanup` parameter: registers a cleanup function that is called **before the next `fn` re-execution** and **when the returned `Disposable` is disposed**, used for canceling stale async tasks and other side effects
+- Returns `Disposable`, using the same resource-oriented disposal semantics as `@unsignal/baseline` `effect()`
 
 **Usage Example: Async task cleanup**
 
@@ -170,7 +170,7 @@ function watch<T>(
   source: ReadonlySignal<T> | (() => T),
   callback: WatchCallback<T>,
   options?: WatchOptions
-): DisposerFn;
+): Disposable;
 
 type WatchCallback<T> = (value: T, oldValue: T, onCleanup: OnCleanup) => void;
 
@@ -183,11 +183,11 @@ interface WatchOptions {
 
 - The `source` parameter: the watch source, can be a `ReadonlySignal<T>` or a `getter` function returning `T`
 - The `callback` parameter: called when the return value of `source` changes, receiving the new value `value`, old value `oldValue`, and the `onCleanup` registration function
-- The `onCleanup` parameter: registers a cleanup function that is called **before the next `callback` re-execution** and **when `DisposerFn` is called**, used for canceling stale async tasks and other side effects
+- The `onCleanup` parameter: registers a cleanup function that is called **before the next `callback` re-execution** and **when the returned `Disposable` is disposed**, used for canceling stale async tasks and other side effects
 - Lazy execution by default: does not immediately call `callback` upon creation, only triggers after `source` changes
 - Option `immediate: true`: immediately calls `callback` once with the current value as `value` upon creation, with `oldValue` as `undefined`
 - Change detection is based on `Object.is` semantic comparison of `source` return values
-- Returns `DisposerFn`, see type declaration for semantics
+- Returns `Disposable`, using the same resource-oriented disposal semantics as `@unsignal/baseline` `effect()`
 
 **Usage Example: Watch getter return value changes**
 

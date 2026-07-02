@@ -1,6 +1,6 @@
 # @unsignal/vue
 
-> Signal binding for Vue 3, powered by [`@unsignal/baseline`](https://github.com/preactjs/signals/tree/main/packages/core).
+> Signal binding for Vue 3, powered by `@unsignal/baseline`.
 
 Provides `mobx-vue-lite`-style reactive bridging between `@unsignal/baseline` and Vue 3's reactivity system.
 
@@ -17,7 +17,7 @@ Provides `mobx-vue-lite`-style reactive bridging between `@unsignal/baseline` an
 ## Requirements
 
 - **Vue >= 3.5**
-- `@unsignal/baseline >= 1.14`
+- `@unsignal/baseline >= 1.0.0`
 - `immer >= 11` for `useSignalState`
 
 ## Installation

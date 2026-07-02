@@ -7,7 +7,7 @@ Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx
 ## Business Requirements
 
 - Support `React 19+`, **explicitly incompatible with lower versions!!!**
-- Support `SSR` mode (must be explicitly enabled by consumers)
+- Support `SSR` mode
 - Support `Function Component`, explicitly does not support `Class Component`
 - Does not support deprecated features, including: `forwardRef` / `contextTypes`
 - Complete `TypeScript` type declarations
@@ -16,7 +16,7 @@ Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx
 
 ### Design Principles
 
-- Assume Signal management **stay outside of components**, the `@unsignal/react` provides only the **consumption** bridge — developers can use this package without any dependency on or knowledge of `@unsignal/baseline`
+- Assume Signal management **stay outside of components**, the `@unsignal/react` provides only the **consumption** bridge and explicitly depends on `@unsignal/baseline` as the signal primitive provider
 - Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
 - `observer` implementation is based on `React.useSyncExternalStore` + `effect()` dependency tracking: uses `useSyncExternalStore` to subscribe to external signal changes, `effect()` automatically tracks `signal` dependencies read by the component during the render phase, and signal changes trigger re-renders
 - Control-flow components (`Show` / `For` / `Switch`) have **built-in fine-grained reactivity**: each item / branch is independently tracked so that only the affected DOM nodes re-render
@@ -90,6 +90,95 @@ function App() {
   );
 }
 ```
+
+#### `Show`
+
+Conditionally renders `children` when the reactive boolean signal is truthy; otherwise renders `fallback`
+
+```ts
+import type { ReadonlySignal } from '@unsignal/baseline';
+import type { ReactNode } from 'react';
+
+interface ShowProps {
+  when: ReadonlySignal<boolean>;
+  fallback?: ReactNode;
+  children: ReactNode | (() => ReactNode);
+}
+
+function Show(props: ShowProps): ReactNode;
+```
+
+**Behavior:**
+
+- Accepts only `ReadonlySignal<boolean>` as the condition source
+- Supports either static `children` content or a zero-argument render function
+- Tracks signal reads inside the active branch through an internal `observer` wrapper
+
+#### `For`
+
+Renders a reactive list from a signal-backed array
+
+```ts
+import type { ReadonlySignal, Signal } from '@unsignal/baseline';
+import type { ReactNode } from 'react';
+
+interface ForProps<T> {
+  each: Signal<T[]> | ReadonlySignal<T[]>;
+  by?: (item: T, index: number) => string | number;
+  fallback?: ReactNode;
+  children: (item: T, index: number) => ReactNode;
+}
+
+function For<T>(props: ForProps<T>): ReactNode;
+```
+
+**Behavior:**
+
+- Accepts only signal-backed arrays, not plain arrays
+- Uses `fallback` when the array is empty
+- Tracks signal reads inside each rendered item through an internal `observer` wrapper
+
+#### `Switch`
+
+Matches the current value of a reactive source against `Case` entries and renders the first match, otherwise the `Default` entry when present
+
+```ts
+import type { ReadonlySignal } from '@unsignal/baseline';
+import type { ReactNode } from 'react';
+
+type Renderable<T> = ReactNode | ((value: T) => ReactNode);
+
+interface SwitchProps<T> {
+  when: ReadonlySignal<T>;
+  equal?: (a: T, b: T) => boolean;
+  children: ReactNode;
+}
+
+interface CaseProps<T> {
+  is: T;
+  children: Renderable<T>;
+}
+
+interface DefaultProps {
+  children: Renderable<unknown>;
+}
+
+interface SwitchComponent {
+  <T>(props: SwitchProps<T>): ReactNode;
+  Case: <T>(props: CaseProps<T>) => ReactNode;
+  Default: (props: DefaultProps) => ReactNode;
+}
+
+const Switch: SwitchComponent;
+```
+
+**Behavior:**
+
+- Accepts only `ReadonlySignal<T>` as the source
+- Uses `Object.is` matching by default
+- Supports custom equality via `equal`
+- Supports both static children and render functions in `Case` and `Default`
+- Tracks signal reads inside the active branch through an internal `observer` wrapper
 
 #### `useSignalValue`
 

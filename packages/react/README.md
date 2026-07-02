@@ -1,6 +1,6 @@
 # @unsignal/react
 
-> Signal binding for React 19, powered by [`@unsignal/baseline`](https://github.com/preactjs/signals/tree/main/packages/core).
+> Signal binding for React 19, powered by `@unsignal/baseline`.
 
 Provides `mobx-react-lite`-style reactive bridging between `@unsignal/baseline` and React's rendering system.
 
@@ -17,7 +17,7 @@ Provides `mobx-react-lite`-style reactive bridging between `@unsignal/baseline` 
 ## Requirements
 
 - **React >= 19**
-- `@unsignal/baseline >= 1.14`
+- `@unsignal/baseline >= 1.0.0`
 - `immer >= 11` for `useSignalState`
 
 ## Installation
@@ -94,13 +94,13 @@ Conditionally renders `when` or `fallback` with reactive signal tracking.
 import type { ReactNode } from 'react';
 import type { ReadonlySignal } from '@unsignal/baseline';
 
-interface ShowProps<T> {
-  when: ReadonlySignal<T> | T;
+interface ShowProps {
+  when: ReadonlySignal<boolean>;
   fallback?: ReactNode;
-  children: (value: T) => ReactNode;
+  children: ReactNode | (() => ReactNode);
 }
 
-function Show<T>(props: ShowProps<T>): ReactNode;
+function Show(props: ShowProps): ReactNode;
 ```
 
 ```tsx
@@ -124,11 +124,11 @@ Renders a reactive list from a signal-backed collection with keyed item tracking
 
 ```ts
 import type { ReactNode } from 'react';
-import type { ReadonlySignal } from '@unsignal/baseline';
+import type { ReadonlySignal, Signal } from '@unsignal/baseline';
 
 interface ForProps<T> {
-  each: ReadonlySignal<readonly T[]> | readonly T[];
-  by?: (item: T, index: number) => React.Key;
+  each: Signal<T[]> | ReadonlySignal<T[]>;
+  by?: (item: T, index: number) => string | number;
   fallback?: ReactNode;
   children: (item: T, index: number) => ReactNode;
 }
@@ -172,15 +172,17 @@ import type { ReactNode } from 'react';
 import type { ReadonlySignal } from '@unsignal/baseline';
 
 interface CaseProps<T> {
-  when: ReadonlySignal<T> | T;
+  is: T;
   children: ReactNode | ((value: T) => ReactNode);
 }
 
 interface DefaultProps {
-  children: ReactNode;
+  children: ReactNode | ((value: unknown) => ReactNode);
 }
 
 interface SwitchProps<T> {
+  when: ReadonlySignal<T>;
+  equal?: (a: T, b: T) => boolean;
   children: ReactNode;
 }
 

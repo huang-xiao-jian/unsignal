@@ -8,7 +8,7 @@ Framework-agnostic reactive utilities that compose with [`@unsignal/baseline`](.
 pnpm add @unsignal/core
 ```
 
-> `@unsignal/baseline` is required as a peer dependency.
+> `@unsignal/baseline` is installed as a package dependency and remains the required runtime primitive provider.
 
 ## API
 
@@ -171,9 +171,9 @@ userResource.destroy();
 Track signal dependencies in `fn` and invoke `callback` when they change.
 
 ```ts
-import type { DisposerFn } from '@unsignal/core';
+import type { Disposable } from '@unsignal/baseline';
 
-function reaction(fn: () => void, callback: () => void): DisposerFn;
+function reaction(fn: () => void, callback: () => void): Disposable;
 ```
 
 - `fn` behaves like `effect(fn)`: it executes immediately, auto-tracks signal dependencies, and re-executes when those dependencies change
@@ -214,9 +214,10 @@ count.value = 3;
 Run a side effect that tracks signal dependencies and supports cleanup.
 
 ```ts
-import type { DisposerFn, OnCleanup } from '@unsignal/core';
+import type { Disposable } from '@unsignal/baseline';
+import type { OnCleanup } from '@unsignal/core';
 
-function watchEffect(fn: (onCleanup: OnCleanup) => void): DisposerFn;
+function watchEffect(fn: (onCleanup: OnCleanup) => void): Disposable;
 ```
 
 - Executes immediately
@@ -254,8 +255,8 @@ dispose();
 Watch a signal or getter and run a callback when the value changes.
 
 ```ts
-import type { ReadonlySignal } from '@unsignal/baseline';
-import type { DisposerFn, OnCleanup } from '@unsignal/core';
+import type { Disposable, ReadonlySignal } from '@unsignal/baseline';
+import type { OnCleanup } from '@unsignal/core';
 
 type WatchCallback<T> = (value: T, oldValue: T, onCleanup: OnCleanup) => void;
 
@@ -267,7 +268,7 @@ function watch<T>(
   source: ReadonlySignal<T> | (() => T),
   callback: WatchCallback<T>,
   options?: WatchOptions
-): DisposerFn;
+): Disposable;
 ```
 
 - Supports both `ReadonlySignal<T>` and getter sources

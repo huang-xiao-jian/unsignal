@@ -44,23 +44,23 @@ The `@unsignal/baseline` runtime SHALL implement its writable signal and derived
 - **WHEN** callers use the documented baseline APIs for reading, writing, subscribing, batching, and effect tracking
 - **THEN** the refactored class-based runtime MUST preserve the observable behavior and compatibility guarantees documented by the baseline capability
 
-### Requirement: Baseline signals use an unsignal-owned runtime brand
+### Requirement: Baseline signals use unsignal-owned runtime branding
 
-The `@unsignal/baseline` package SHALL expose a baseline-owned runtime brand for its signal primitives instead of a `preact`-named shared symbol. Writable signals and read-only computed signals SHALL expose the same baseline-owned brand through their public `brand` property.
+The `@unsignal/baseline` package SHALL use unsignal-owned runtime branding for its signal primitives instead of `preact`-named shared symbols. Writable signals and read-only computed signals MAY use distinct internal brand symbols so long as the supported runtime guard APIs continue to distinguish them correctly.
 
-#### Scenario: Writable signals expose the baseline-owned brand
+#### Scenario: Writable signals use an unsignal-owned writable brand
 
 - **WHEN** a caller creates a writable signal with `signal()`
-- **THEN** the returned signal MUST expose a `brand` property equal to the baseline-owned shared symbol
+- **THEN** the returned signal MUST carry an unsignal-owned writable runtime brand
 
-#### Scenario: Computed signals expose the baseline-owned brand
+#### Scenario: Computed signals use an unsignal-owned readonly brand
 
 - **WHEN** a caller creates a derived signal with `computed()`
-- **THEN** the returned read-only signal MUST expose the same baseline-owned shared symbol through its `brand` property
+- **THEN** the returned read-only signal MUST carry an unsignal-owned readonly runtime brand distinct from the writable signal brand
 
 ### Requirement: Baseline provides runtime signal guard APIs
 
-The `@unsignal/baseline` package SHALL export `isSignal`, `isReadonlySignal`, and `isWritableSignal` as supported runtime guard functions for baseline primitives.
+The `@unsignal/baseline` package SHALL export `isSignal`, `isReadonlySignal`, and `isWritableSignal` as supported runtime guard functions for baseline primitives. These guard APIs are defined against baseline runtime instances and may rely on `instanceof Signal` semantics.
 
 #### Scenario: Generic baseline signals are recognized by isSignal
 
@@ -187,9 +187,7 @@ function signal<T = undefined>(): Signal<T | undefined>;
 - writing `.value` notifies dependents when the value changes
 - `peek()` reads the current value without subscribing the surrounding reactive context
 - `subscribe()` immediately emits the current value, then emits again on later changes
-- all signal primitives carry the shared `brand` symbol
-
-**Usage Example:**
+  **Usage Example:**
 
 ```ts
 import { signal } from '@unsignal/baseline';
