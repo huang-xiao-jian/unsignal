@@ -5,8 +5,12 @@ export interface ToSignalOptions<T> {
   initialValue?: T;
 }
 
-export interface SignalSubscription<TValue> {
-  readonly value: ReadonlySignal<TValue>;
+export interface ReadonlySignalLike<TValue> {
+  readonly value: TValue;
+  peek(): TValue;
+}
+
+export interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue> {
   dispose(): void;
 }
 
@@ -22,16 +26,24 @@ export function toObservable<T>(source: ReadonlySignal<T>): Observable<T> {
   });
 }
 
-class ObservableSignalSubscription<TValue> implements SignalSubscription<TValue> {
-  public readonly value: ReadonlySignal<TValue>;
-
+class ObservableSignalView<TValue> implements ObservableSignal<TValue> {
   private readonly disposable: Disposable;
 
-  public constructor(value: Signal<TValue>, subscription: Subscription) {
-    this.value = value;
+  public constructor(
+    private readonly valueSignal: Signal<TValue>,
+    subscription: Subscription
+  ) {
     this.disposable = new Disposable(() => {
       subscription.unsubscribe();
     });
+  }
+
+  public get value(): TValue {
+    return this.valueSignal.value;
+  }
+
+  public peek(): TValue {
+    return this.valueSignal.peek();
   }
 
   public dispose(): void {
@@ -42,15 +54,15 @@ class ObservableSignalSubscription<TValue> implements SignalSubscription<TValue>
 export function toSignal<T>(
   source$: Observable<T>,
   options: ToSignalOptions<T> & { initialValue: T }
-): SignalSubscription<T>;
+): ObservableSignal<T>;
 export function toSignal<T>(
   source$: Observable<T>,
   options?: ToSignalOptions<T>
-): SignalSubscription<T | undefined>;
+): ObservableSignal<T | undefined>;
 export function toSignal<T>(
   source$: Observable<T>,
   options?: ToSignalOptions<T>
-): SignalSubscription<T | undefined> {
+): ObservableSignal<T | undefined> {
   const value = signal<T | undefined>(options?.initialValue);
   const subscription = source$.subscribe({
     next(nextValue) {
@@ -64,5 +76,5 @@ export function toSignal<T>(
     },
   });
 
-  return new ObservableSignalSubscription(value, subscription);
+  return new ObservableSignalView(value, subscription);
 }

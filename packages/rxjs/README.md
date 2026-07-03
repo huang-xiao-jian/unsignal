@@ -47,7 +47,7 @@ subscription.unsubscribe();
 
 ### `toSignal(source$, options?)`
 
-Expose the latest value from an `RxJS` `Observable` through a readonly signal-backed controller.
+Expose the latest value from an `RxJS` `Observable` through a disposable readonly signal-like facade.
 
 ```ts
 import type { ReadonlySignal } from '@unsignal/baseline';
@@ -57,26 +57,31 @@ interface ToSignalOptions<T> {
   initialValue?: T;
 }
 
-interface SignalSubscription<TValue> {
-  readonly value: ReadonlySignal<TValue>;
+interface ReadonlySignalLike<TValue> {
+  readonly value: TValue;
+  peek(): TValue;
+}
+
+interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue> {
   dispose(): void;
 }
 
 function toSignal<T>(
   source$: Observable<T>,
   options: ToSignalOptions<T> & { initialValue: T }
-): SignalSubscription<T>;
+): ObservableSignal<T>;
 
 function toSignal<T>(
   source$: Observable<T>,
   options?: ToSignalOptions<T>
-): SignalSubscription<T | undefined>;
+): ObservableSignal<T | undefined>;
 ```
 
 - Subscribes eagerly when `toSignal(...)` is called
 - Returns the latest reflected value only
 - Uses `initialValue` when provided, otherwise exposes `undefined` before the first emission
 - Retains the latest reflected value after source error or completion
+- Exposes `value`, `peek()`, and `dispose()` only
 - Requires explicit `dispose()` ownership
 
 ```ts
@@ -86,13 +91,19 @@ import { toSignal } from '@unsignal/rxjs';
 const source$ = new Subject<number>();
 const view = toSignal(source$, { initialValue: 0 });
 
-console.log(view.value.value); // 0
+console.log(view.value); // 0
+console.log(view.peek()); // 0
 
 source$.next(2);
-console.log(view.value.value); // 2
+console.log(view.value); // 2
 
 view.dispose();
 ```
+
+### Migration
+
+- Update reads from `view.value.value` to `view.value`.
+- The value returned by `toSignal(...)` is not a baseline `ReadonlySignal` instance. Treat it as the documented `ReadonlySignalLike` facade with `value`, `peek()`, and `dispose()`.
 
 ## Lifecycle Ownership
 

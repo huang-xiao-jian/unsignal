@@ -1,7 +1,7 @@
-import type { ReadonlySignal } from '@unsignal/baseline';
 import { signal } from '@unsignal/baseline';
 import { Observable, Subject } from 'rxjs';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type { ObservableSignal, ReadonlySignalLike } from './index';
 import { toObservable, toSignal } from './index';
 
 describe('toObservable', () => {
@@ -68,7 +68,8 @@ describe('toSignal', () => {
     const source$ = new Subject<number>();
     const view = toSignal(source$);
 
-    expect(view.value.value).toBeUndefined();
+    expect(view.value).toBeUndefined();
+    expect(view.peek()).toBeUndefined();
 
     view.dispose();
   });
@@ -77,8 +78,9 @@ describe('toSignal', () => {
     const source$ = new Subject<number>();
     const view = toSignal(source$, { initialValue: 1 });
 
-    expectTypeOf(view.value).toEqualTypeOf<ReadonlySignal<number>>();
-    expect(view.value.value).toBe(1);
+    expectTypeOf(view).toEqualTypeOf<ObservableSignal<number>>();
+    expectTypeOf(view).toExtend<ReadonlySignalLike<number>>();
+    expect(view.value).toBe(1);
 
     view.dispose();
   });
@@ -90,7 +92,8 @@ describe('toSignal', () => {
     source$.next(2);
     source$.next(4);
 
-    expect(view.value.value).toBe(4);
+    expect(view.value).toBe(4);
+    expect(view.peek()).toBe(4);
 
     view.dispose();
   });
@@ -102,7 +105,7 @@ describe('toSignal', () => {
     source$.next(3);
     source$.error(new Error('boom'));
 
-    expect(view.value.value).toBe(3);
+    expect(view.value).toBe(3);
 
     view.dispose();
   });
@@ -114,7 +117,19 @@ describe('toSignal', () => {
     source$.next(7);
     source$.complete();
 
-    expect(view.value.value).toBe(7);
+    expect(view.value).toBe(7);
+
+    view.dispose();
+  });
+
+  it('should expose only the signal-like facade contract', () => {
+    const source$ = new Subject<number>();
+    const view = toSignal(source$, { initialValue: 1 });
+
+    expect(view.value).toBe(1);
+    expect(view.peek()).toBe(1);
+    expect('subscribe' in view).toBe(false);
+    expect('toJSON' in view).toBe(false);
 
     view.dispose();
   });
@@ -126,6 +141,6 @@ describe('toSignal', () => {
     view.dispose();
     source$.next(9);
 
-    expect(view.value.value).toBe(1);
+    expect(view.value).toBe(1);
   });
 });
