@@ -94,27 +94,32 @@ The `@unsignal/baseline` package SHALL export `isSignal`, `isReadonlySignal`, an
 
 ### Requirement: Baseline effects expose resource-oriented disposal semantics
 
-The `@unsignal/baseline` package SHALL return a resource-oriented handle from `effect()` so effect teardown can be managed consistently with other disposable and unsubscribable resources. The returned handle SHALL expose `dispose()`, `unsubscribe()`, and `Symbol.dispose`, and each entry point SHALL perform the same underlying teardown behavior.
+The `@unsignal/baseline` package SHALL return a resource-oriented handle from `effect()` so effect teardown can be managed consistently with other disposable resources. The returned handle SHALL expose `dispose()` as its only direct teardown method. The package SHALL also keep `Subscription` as a separate concept and SHALL expose a standalone `asSubscription(disposable)` adapter for explicit subscription-shaped interoperability.
 
 #### Scenario: Effect handle is stored as a managed resource
 
 - **WHEN** a caller stores the value returned from `effect()` for later teardown
 - **THEN** the returned value MUST be an object resource rather than a callable teardown function
 
-#### Scenario: Effect handle supports symbol-based disposal
+#### Scenario: Effect handle supports direct disposal
 
-- **WHEN** a caller invokes the returned handle through `Symbol.dispose`
+- **WHEN** a caller invokes `dispose()` on the returned handle
 - **THEN** the effect MUST stop tracking, run pending cleanup exactly once, and release its subscriptions
 
-#### Scenario: Effect handle represents unsubscribable ownership
+#### Scenario: Effect handle omits symbol-based disposal
 
-- **WHEN** a caller manages the returned handle alongside other unsubscribable resources
-- **THEN** the effect handle MUST expose teardown semantics equivalent to unsubscribing the effect from future updates
+- **WHEN** a caller inspects the returned handle
+- **THEN** the handle MUST NOT expose `Symbol.dispose` as a teardown entry point
 
-#### Scenario: Named teardown methods are equivalent
+#### Scenario: Effect handle omits direct unsubscribe
 
-- **WHEN** a caller invokes `dispose()` or `unsubscribe()` on the returned handle
-- **THEN** each method MUST perform the same teardown behavior as `Symbol.dispose`
+- **WHEN** a caller inspects the returned handle
+- **THEN** the handle MUST NOT expose `unsubscribe()` as a direct teardown entry point
+
+#### Scenario: Effect handle uses standalone subscription adaptation
+
+- **WHEN** a caller passes the returned handle to `asSubscription(disposable)`
+- **THEN** the result MUST be a `Subscription` object whose `unsubscribe()` performs the same teardown behavior as `dispose()`
 
 ### Exported Types
 
@@ -164,8 +169,14 @@ interface EffectOptions {
 ```ts
 interface Disposable {
   dispose(): void;
+}
+```
+
+#### `Subscription`
+
+```ts
+interface Subscription {
   unsubscribe(): void;
-  [Symbol.dispose](): void;
 }
 ```
 
@@ -287,12 +298,26 @@ function effect(
 - re-runs when tracked dependencies change
 - may return a cleanup function
 - returns an object resource handle that stops further tracking and cleanup
-- exposes equivalent `dispose()`, `unsubscribe()`, and `Symbol.dispose` teardown entry points
+- exposes `dispose()` as its only direct teardown entry point
+
+#### `asSubscription`
+
+Adapts a disposable resource to a subscription-shaped object.
+
+```ts
+function asSubscription(disposable: Disposable): Subscription;
+```
+
+**Behavior:**
+
+- returns a `Subscription` object with `unsubscribe()`
+- `unsubscribe()` performs the same teardown behavior as `dispose()`
+- keeps subscription-shaped interoperability separate from direct disposable ownership
 
 **Usage Example:**
 
 ```ts
-import { effect, signal } from '@unsignal/baseline';
+import { asSubscription, effect, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 
@@ -301,6 +326,14 @@ const disposable = effect(() => {
 });
 
 disposable.dispose();
+
+const subscription = asSubscription(
+  effect(() => {
+    console.log(count.value);
+  })
+);
+
+subscription.unsubscribe();
 ```
 
 #### `batch`

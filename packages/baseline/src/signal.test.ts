@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  asSubscription,
   computed,
   effect,
   isReadonlySignal,
@@ -80,17 +81,17 @@ describe('signal', () => {
     expect(spy3).toHaveBeenCalledTimes(2);
   });
 
-  it('should return an effect handle object with dispose, unsubscribe, and Symbol.dispose', () => {
+  it('should return an effect handle object with dispose as the only direct teardown method', () => {
     const disposable = effect(() => {});
 
     expect(disposable).toBeTypeOf('object');
     expect(disposable).not.toBeNull();
     expect(disposable.dispose).toBeTypeOf('function');
-    expect(disposable.unsubscribe).toBeTypeOf('function');
-    expect(disposable[Symbol.dispose]).toBeTypeOf('function');
+    expect('unsubscribe' in disposable).toBe(false);
+    expect(Symbol.dispose in disposable).toBe(false);
   });
 
-  it('should stop future updates when the effect handle is unsubscribed', () => {
+  it('should stop future updates when the effect handle is adapted to a subscription', () => {
     const source = signal(0);
     const spy = vi.fn(() => {
       source.value;
@@ -99,13 +100,13 @@ describe('signal', () => {
     const handle = effect(spy);
     expect(spy).toHaveBeenCalledOnce();
 
-    handle.unsubscribe();
+    asSubscription(handle).unsubscribe();
     source.value = 1;
 
     expect(spy).toHaveBeenCalledOnce();
   });
 
-  it('should run cleanup only once when disposed through multiple handle methods', () => {
+  it('should run cleanup only once when disposed through direct and adapted teardown', () => {
     const cleanup = vi.fn();
     const source = signal(0);
 
@@ -115,8 +116,7 @@ describe('signal', () => {
     });
 
     disposable.dispose();
-    disposable.unsubscribe();
-    disposable[Symbol.dispose]();
+    asSubscription(disposable).unsubscribe();
 
     expect(cleanup).toHaveBeenCalledTimes(1);
   });

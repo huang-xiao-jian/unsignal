@@ -13,8 +13,6 @@ describe('useSignalEffect options', () => {
     const options: EffectOptions = { name: 'tracked effect' };
     const effectSpy = vi.fn().mockReturnValue({
       dispose: () => undefined,
-      unsubscribe: () => undefined,
-      [Symbol.dispose]: () => undefined,
     });
 
     vi.doMock('@unsignal/baseline', () => ({

@@ -9,6 +9,7 @@ A built-in (WIP) primitive runtime for the `unsignal` ecosystem.
 - `signal`
 - `computed`
 - `effect`
+- `asSubscription`
 - `batch`
 - `action`
 - `isSignal`
@@ -40,10 +41,13 @@ isReadonlySignal(count); // false
 
 ## Effect Handle Migration
 
-`effect()` now returns a `Disposable` handle object instead of a callable disposer function.
+`effect()` returns a `Disposable` handle object instead of a callable disposer function.
+The handle exposes `dispose()` as its only direct teardown method. Use the
+standalone `asSubscription()` adapter when a subscription-shaped object is
+needed.
 
 ```ts
-import { effect, signal } from '@unsignal/baseline';
+import { asSubscription, effect, signal } from '@unsignal/baseline';
 
 const count = signal(0);
 
@@ -52,11 +56,16 @@ const disposable = effect(() => {
 });
 
 disposable.dispose();
-// or
-disposable.unsubscribe();
-// or
-disposable[Symbol.dispose]();
+
+const subscription = asSubscription(
+  effect(() => {
+    console.log(count.value);
+  })
+);
+
+subscription.unsubscribe();
 ```
 
 If existing code used `const dispose = effect(...); dispose();`, migrate it to
-`const handle = effect(...); handle.dispose();` or `handle.unsubscribe();`.
+`const handle = effect(...); handle.dispose();`. If an integration requires an
+`unsubscribe()` method, migrate it to `asSubscription(handle).unsubscribe()`.

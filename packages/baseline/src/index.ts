@@ -356,7 +356,8 @@ class Signal<T = any> {
       },
       { name: 'sub' }
     );
-    return handle.unsubscribe.bind(handle);
+    const subscription = asSubscription(handle);
+    return subscription.unsubscribe.bind(subscription);
   }
 
   valueOf(): T {
@@ -753,18 +754,24 @@ type EffectFn =
   | (() => void | (() => void));
 
 type DisposeFn = () => void;
+type Subscription = {
+  unsubscribe(): void;
+};
+
 class Disposable {
   constructor(private readonly fn: DisposeFn) {}
 
-  dispose() {
+  dispose(): void {
     this.fn();
   }
-  unsubscribe() {
-    this.fn();
-  }
-  [Symbol.dispose]() {
-    this.fn();
-  }
+}
+
+function asSubscription(disposable: Disposable): Subscription {
+  return {
+    unsubscribe() {
+      disposable.dispose();
+    },
+  };
 }
 
 /**
@@ -853,7 +860,7 @@ export interface EffectOptions {
  * gets disposed, whichever happens first.
  *
  * @param fn The effect callback.
- * @returns An object for disposing or unsubscribing the effect.
+ * @returns An object for disposing the effect.
  */
 function effect(fn: EffectFn, options?: EffectOptions): Disposable {
   const effect = new Effect(fn, options);
@@ -887,6 +894,7 @@ export {
   Effect,
   Signal,
   action,
+  asSubscription,
   batch,
   computed,
   effect,
@@ -896,4 +904,5 @@ export {
   untracked,
   type DisposeFn,
   type ReadonlySignal,
+  type Subscription,
 };

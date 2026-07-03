@@ -725,7 +725,7 @@ describe('computed()', () => {
 
       spyB.mockClear();
       spyC.mockClear();
-      disposable.unsubscribe();
+      disposable.dispose();
 
       a.value = 'aa';
 

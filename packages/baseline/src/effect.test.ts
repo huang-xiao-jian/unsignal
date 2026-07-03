@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { batch, computed, effect, signal } from './index';
+import { asSubscription, batch, computed, effect, signal } from './index';
 
 describe('effect()', () => {
   it('should run the callback immediately', () => {
@@ -161,7 +161,7 @@ describe('effect()', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
-  it('should unsubscribe from signal', () => {
+  it('should dispose from signal', () => {
     const s = signal(123);
     const spy = vi.fn(() => {
       s.value;
@@ -169,7 +169,7 @@ describe('effect()', () => {
     const handle = effect(spy);
     spy.mockClear();
 
-    handle.unsubscribe();
+    handle.dispose();
     s.value = 42;
     expect(spy).not.toHaveBeenCalled();
   });
@@ -555,16 +555,25 @@ describe('effect()', () => {
     expect(() => disposable.dispose()).not.to.throw();
   });
 
-  it('should support resource management disposal', () => {
+  it('should adapt a disposable effect handle to a subscription', () => {
     const a = signal(0);
-    const spy = vi.fn();
-    {
-      using _dispose = effect(() => {
-        a.value;
-        return spy;
-      });
-    }
+    const spy = vi.fn(() => {
+      a.value;
+    });
+    const cleanup = vi.fn();
+    const disposable = effect(() => {
+      spy();
+      return cleanup;
+    });
+    const subscription = asSubscription(disposable);
+
+    expect(subscription.unsubscribe).toBeTypeOf('function');
+
+    subscription.unsubscribe();
+    a.value = 1;
+
     expect(spy).toHaveBeenCalledOnce();
+    expect(cleanup).toHaveBeenCalledOnce();
   });
 
   it('should allow disposing a running effect', () => {
