@@ -20,6 +20,10 @@ Extend the original `Signal Primitive` without reduplicated
 - [testing](./docs/testing.md) Automation testing guidelines and instructions, it is necessary to understand them before generating test case code
 - [convention](./docs/conventions.md) Code writing standards require that one must have a clear understanding before generating code examples or writing actual business code.
 
+## OpenSpec Archive Rule
+
+After each OpenSpec archive action, identify the affected capabilities and packages from the change's delta specs, synced main specs, and implementation files. For every affected package, review its user-facing `README.md` and update it when the archived change alters public APIs, behavior, migration guidance, or usage examples.
+
 ## Project
 
 The function is divided into multiple sub-packages. the prefix will be uniformly set as: `unsignal` (e.g. `@unsignal/react`)
