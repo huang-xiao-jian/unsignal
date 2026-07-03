@@ -15,6 +15,7 @@
     "paths": {
       "@unsignal/baseline": ["./packages/baseline/src/index.ts"],
       "@unsignal/core": ["./packages/core/src/index.ts"],
+      "@unsignal/core/resource": ["./packages/core/src/resource.ts"],
       "@unsignal/core/mobx": ["./packages/core/src/mobx.ts"],
       "@unsignal/rxjs": ["./packages/rxjs/src/index.ts"]
     }

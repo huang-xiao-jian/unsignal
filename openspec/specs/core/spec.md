@@ -520,6 +520,28 @@ const searchResource = resource({
 - **THEN** the return type MUST be `ReadonlySignal<T>`
 - **AND** the returned runtime value MUST be the same signal instance
 
+### Requirement: High-level core APIs use dedicated export paths
+
+`@unsignal/core` SHALL keep higher-level optional APIs behind dedicated package subpath entrypoints instead of exposing them from the root entrypoint.
+
+#### Scenario: Root entrypoint excludes resource APIs
+
+- **WHEN** a consumer imports from `@unsignal/core`
+- **THEN** the root entrypoint MUST expose `reaction`, `readonly`, `asReadonly`, `watch`, `watchEffect`, and their documented related types
+- **AND** the root entrypoint MUST NOT export `resource` or any resource-related public types
+
+#### Scenario: Resource API is available from a dedicated subpath
+
+- **WHEN** a consumer imports from `@unsignal/core/resource`
+- **THEN** the package MUST expose the `resource` factory and the documented resource-related public types
+- **AND** the runtime behavior and TypeScript signatures of that API MUST remain equivalent to the previously documented `resource` contract
+
+#### Scenario: Documentation guides consumers to the dedicated resource path
+
+- **WHEN** a consumer reads the `@unsignal/core` package documentation after this change
+- **THEN** examples and API references for the async resource primitive MUST import from `@unsignal/core/resource`
+- **AND** the documentation MUST make the root-entry removal clear enough for migration
+
 #### Scenario: Shallow projection narrows top-level signal members on objects
 
 - **WHEN** a consumer passes an object literal or class instance containing top-level `Signal` members to `asReadonly` without enabling deep projection

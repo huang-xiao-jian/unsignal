@@ -6,6 +6,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     mobx: 'src/mobx.ts',
+    resource: 'src/resource.ts',
   },
   format: ['esm'],
 });

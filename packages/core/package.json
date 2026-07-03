@@ -21,6 +21,10 @@
       "types": "./dist/mobx.d.mts",
       "import": "./dist/mobx.mjs"
     },
+    "./resource": {
+      "types": "./dist/resource.d.mts",
+      "import": "./dist/resource.mjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",

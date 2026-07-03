@@ -10,6 +10,22 @@ pnpm add @unsignal/core
 
 > `@unsignal/baseline` is installed as a package dependency and remains the required runtime primitive provider.
 
+## Entry Points
+
+- Import the baseline utility surface from `@unsignal/core`
+- Import the async resource primitive from `@unsignal/core/resource`
+
+### Migration Note
+
+`resource` and its related public types are no longer exported from `@unsignal/core`.
+
+Update imports like this:
+
+```ts
+- import { resource } from '@unsignal/core';
++ import { resource } from '@unsignal/core/resource';
+```
+
 ## API
 
 ### `readonly(source)`
@@ -128,6 +144,7 @@ Create a reactive async resource that loads whenever its params become defined a
 
 ```ts
 import type { ReadonlySignal } from '@unsignal/baseline';
+import { resource } from '@unsignal/core/resource';
 
 type ResourceStatus = 'idle' | 'loading' | 'reloading' | 'resolved' | 'error';
 
@@ -186,7 +203,7 @@ function resource<TParams, TValue>(
 
 ```ts
 import { signal } from '@unsignal/baseline';
-import { resource } from '@unsignal/core';
+import { resource } from '@unsignal/core/resource';
 
 const userId = signal<number | undefined>(1);
 
