@@ -123,6 +123,55 @@ const ro = readonly(doubled);
 // ro !== doubled, but always mirrors doubled.value
 ```
 
+#### `asReadonly`
+
+```ts
+function asReadonly<T>(value: T): ShallowReadonlySignals<T>;
+function asReadonly<T>(value: T, options: { deep: true }): DeepReadonlySignals<T>;
+```
+
+**Behavior:**
+
+- The `value` parameter may be a `Signal<T>`, `ReadonlySignal<T>`, object literal, or class instance
+- Returns the same runtime value that was passed in
+- Narrows signal-valued members to `ReadonlySignal` types at the type level only
+- Uses shallow projection by default
+- Supports deep projection when `options.deep` is `true`
+- Does not create derived signal wrappers, freeze objects, or clone object graphs
+
+**Usage Example: Expose a signal through a readonly type without wrapping**
+
+```ts
+import { signal } from '@unsignal/baseline';
+import { asReadonly } from '@unsignal/core';
+
+const count = signal(0);
+const ro = asReadonly(count);
+
+console.log(ro === count); // true
+console.log(ro.value); // 0
+```
+
+**Usage Example: Narrow signal-bearing members on an object**
+
+```ts
+import { signal } from '@unsignal/baseline';
+import { asReadonly } from '@unsignal/core';
+
+const counter = {
+  count: signal(0),
+  nested: {
+    total: signal(1),
+  },
+};
+
+const shallowCounter = asReadonly(counter);
+const deepCounter = asReadonly(counter, { deep: true });
+
+// shallowCounter.count is readonly, nested.total keeps its original type
+// deepCounter.nested.total is also readonly
+```
+
 #### `watchEffect`
 
 ```ts
@@ -439,7 +488,7 @@ const searchResource = resource({
 
 #### Scenario: Core APIs accept writable and readonly baseline signals
 
-- **WHEN** a consumer calls `readonly`, `watch`, `watchEffect`, `reaction`, or `resource`
+- **WHEN** a consumer calls `readonly`, `asReadonly`, `watch`, `watchEffect`, `reaction`, or `resource`
 - **THEN** the documented types, examples, and supported runtime behavior MUST target `Signal`, `ReadonlySignal`, `effect`, `computed`, `batch`, and `untracked` from `@unsignal/baseline`
 
 #### Scenario: Core documentation describes baseline as the primitive dependency
@@ -459,7 +508,32 @@ const searchResource = resource({
 #### Scenario: Migration guidance points to direct baseline composition
 
 - **WHEN** a consumer migrates away from removed model-helper APIs
-- **THEN** the package guidance MUST direct them to explicit classes, factory functions, or plain objects composed from baseline `signal`, `computed`, and `readonly` primitives
+- **THEN** the package guidance MUST direct them to explicit classes, factory functions, or plain objects composed from baseline `signal`, `computed`, `readonly`, and `asReadonly` primitives
+
+### Requirement: Type-only readonly projection for signal-bearing values
+
+`@unsignal/core` SHALL expose an `asReadonly` API that narrows writable baseline signals to `ReadonlySignal` types without changing runtime identity.
+
+#### Scenario: Direct signal input is narrowed without wrapping
+
+- **WHEN** a consumer passes a `Signal<T>` to `asReadonly`
+- **THEN** the return type MUST be `ReadonlySignal<T>`
+- **AND** the returned runtime value MUST be the same signal instance
+
+#### Scenario: Shallow projection narrows top-level signal members on objects
+
+- **WHEN** a consumer passes an object literal or class instance containing top-level `Signal` members to `asReadonly` without enabling deep projection
+- **THEN** the return type MUST preserve the original object shape and member access patterns
+- **AND** each top-level `Signal<T>` member MUST be narrowed to `ReadonlySignal<T>`
+- **AND** nested object members MUST retain their original types
+- **AND** the returned runtime value MUST be the same object instance
+
+#### Scenario: Deep projection narrows nested signal members on objects
+
+- **WHEN** a consumer passes an object literal or class instance to `asReadonly` with deep projection enabled
+- **THEN** the return type MUST recursively narrow nested `Signal<T>` members to `ReadonlySignal<T>`
+- **AND** function-valued members and runtime instance identity MUST be preserved
+- **AND** non-signal members MUST retain their existing runtime behavior
 
 ### Requirement: Core exposes MobX decorator subpath
 

@@ -44,28 +44,82 @@ console.log(doubledView === doubled); // false
 console.log(doubledView.value); // 4
 ```
 
+### `asReadonly(value, options?)`
+
+Project signal-bearing values to readonly types without changing runtime identity.
+
+```ts
+import type { ReadonlySignal, Signal } from '@unsignal/baseline';
+import type {
+  AsReadonlyOptions,
+  DeepReadonlySignals,
+  ShallowReadonlySignals,
+} from '@unsignal/core';
+
+function asReadonly<T>(value: T): ShallowReadonlySignals<T>;
+function asReadonly<T>(value: T, options: { deep: true }): DeepReadonlySignals<T>;
+function asReadonly<T>(
+  value: T,
+  options?: AsReadonlyOptions
+): ShallowReadonlySignals<T> | DeepReadonlySignals<T>;
+```
+
+- Returns the same runtime value or instance that was passed in
+- Narrows `Signal<T>` members to `ReadonlySignal<T>` at the type level only
+- Uses shallow projection by default
+- Supports deep projection with `options: { deep: true }`
+- Does not freeze objects, clone state, or create derived signal wrappers
+
+```ts
+import { signal } from '@unsignal/baseline';
+import { asReadonly } from '@unsignal/core';
+
+const counter = {
+  count: signal(1),
+  nested: {
+    total: signal(2),
+  },
+};
+
+const shallowCounter = asReadonly(counter);
+const deepCounter = asReadonly(counter, { deep: true });
+
+console.log(shallowCounter === counter); // true
+console.log(deepCounter === counter); // true
+
+shallowCounter.count.value; // number
+deepCounter.nested.total.value; // number
+```
+
+Use `readonly()` when you need a new derived `ReadonlySignal` at runtime. Use `asReadonly()` when you need to expose existing signals or signal-bearing objects through readonly types only.
+
 ### Baseline-native readonly composition
 
-`@unsignal/core` no longer exports model-construction helpers. Compose writable and readonly state directly with baseline primitives and `readonly()`:
+`@unsignal/core` no longer exports model-construction helpers. Compose writable and readonly state directly with baseline primitives plus `readonly()` and `asReadonly()`:
 
 ```ts
 import { computed, signal } from '@unsignal/baseline';
-import { readonly } from '@unsignal/core';
+import { asReadonly, readonly } from '@unsignal/core';
 
 const count = signal(1);
 const doubled = computed(() => count.value * 2);
 
 const counter = {
-  count: readonly(count),
+  count,
   doubled,
   increment() {
     count.value += 1;
   },
 };
 
+const publicCounter = asReadonly({
+  count: counter.count,
+  doubled: readonly(counter.doubled),
+});
+
 counter.increment();
-console.log(counter.count.value); // 2
-console.log(counter.doubled.value); // 4
+console.log(publicCounter.count.value); // 2
+console.log(publicCounter.doubled.value); // 4
 ```
 
 ### `resource(options)`

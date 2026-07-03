@@ -1,6 +1,12 @@
 export type { OnCleanup } from './clean';
 export { reaction } from './reaction';
-export { readonly } from './readonly';
+export {
+  asReadonly,
+  readonly,
+  type AsReadonlyOptions,
+  type DeepReadonlySignals,
+  type ShallowReadonlySignals,
+} from './readonly';
 export { resource } from './resource';
 export type {
   Aborter,
