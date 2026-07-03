@@ -36,11 +36,12 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@unsignal/baseline": "workspace:*"
-  },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "@unsignal/baseline": "workspace:^"
+  },
+  "peerDependencies": {
+    "@unsignal/baseline": "workspace:^"
   },
   "publishConfig": {
     "access": "public",

@@ -58,23 +58,15 @@ importers:
         version: 22.19.19
 
   packages/core:
-    dependencies:
-      '@unsignal/baseline':
-        specifier: workspace:*
-        version: link:../baseline
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
+      '@unsignal/baseline':
+        specifier: workspace:^
+        version: link:../baseline
 
   packages/react:
-    dependencies:
-      '@unsignal/baseline':
-        specifier: workspace:*
-        version: link:../baseline
-      '@unsignal/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@testing-library/react':
         specifier: ^16.3.2
@@ -88,6 +80,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.16)
+      '@unsignal/baseline':
+        specifier: workspace:^
+        version: link:../baseline
+      '@unsignal/core':
+        specifier: workspace:^
+        version: link:../core
       immer:
         specifier: ^11.1.8
         version: 11.1.8
@@ -99,26 +97,25 @@ importers:
         version: 19.2.7(react@19.2.7)
 
   packages/vue:
-    dependencies:
-      '@unsignal/baseline':
-        specifier: workspace:*
-        version: link:../baseline
-      immer:
-        specifier: ^11.0.0
-        version: 11.1.8
-      vue:
-        specifier: ^3.5.0
-        version: 3.5.35(typescript@6.0.3)
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.19
+      '@unsignal/baseline':
+        specifier: workspace:^
+        version: link:../baseline
       '@vitejs/plugin-vue-jsx':
         specifier: ^5.1.5
         version: 5.1.5(vite@7.3.3(@types/node@22.19.19)(yaml@2.9.0))(vue@3.5.35(typescript@6.0.3))
+      immer:
+        specifier: ^11.1.8
+        version: 11.1.8
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
+      vue:
+        specifier: ^3.5.0
+        version: 3.5.35(typescript@6.0.3)
 
 packages:
 

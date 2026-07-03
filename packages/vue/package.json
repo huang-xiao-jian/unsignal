@@ -32,16 +32,16 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@unsignal/baseline": "workspace:*"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@unsignal/baseline": "workspace:^",
     "@vitejs/plugin-vue-jsx": "^5.1.5",
-    "jsdom": "^29.1.1"
+    "immer": "^11.1.8",
+    "jsdom": "^29.1.1",
+    "vue": "^3.5.0"
   },
   "peerDependencies": {
-    "@unsignal/baseline": "^1.0.0",
+    "@unsignal/baseline": "workspace:^",
     "immer": "^11.0.0",
     "vue": "^3.5.0"
   },
