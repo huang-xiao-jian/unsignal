@@ -41,6 +41,7 @@ The project is divided into multiple sub-packages. The package prefix is uniform
 | :------------------- | :----------------------------------------------------------------- |
 | `@unsignal/baseline` | Built-in primitive signal runtime                                  |
 | `@unsignal/core`     | Framework-agnostic reactive utilities built on baseline primitives |
+| `@unsignal/rxjs`     | RxJS interoperability built on baseline primitives                 |
 | `@unsignal/react`    | React 19 binding for the unsignal reactive model                   |
 | `@unsignal/vue`      | Vue 3 binding for the unsignal reactive model                      |
 
@@ -50,10 +51,12 @@ The project is divided into multiple sub-packages. The package prefix is uniform
 graph TD
     baseline["@unsignal/baseline"]
     core["@unsignal/core"]
+    rxjs["@unsignal/rxjs"]
     vue["@unsignal/vue"]
     react["@unsignal/react"]
 
     core -->|depends on| baseline
+    rxjs -->|depends on| baseline
     vue -->|depends on| core
     react -->|depends on| core
 ```
@@ -64,12 +67,14 @@ The packages and stable OpenSpec capabilities follow the same structure:
 └── packages
     ├── vue
     ├── react
+    ├── rxjs
     ├── core
     └── baseline
 └── openspec
     └── specs
         ├── vue
         ├── react
+        ├── rxjs
         ├── core
         └── baseline
 ```

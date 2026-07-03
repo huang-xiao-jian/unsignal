@@ -1,0 +1,50 @@
+{
+  "name": "@unsignal/rxjs",
+  "version": "1.0.0",
+  "description": "RxJS interoperability for the unsignal ecosystem",
+  "homepage": "https://github.com/huang-xiao-jian/unsignal#readme",
+  "bugs": {
+    "url": "https://github.com/huang-xiao-jian/unsignal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huang-xiao-jian/unsignal.git"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@unsignal/baseline": "workspace:^",
+    "rxjs": "^7.8.2"
+  },
+  "peerDependencies": {
+    "@unsignal/baseline": "workspace:^",
+    "rxjs": "^7.8.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  }
+}
