@@ -1,7 +1,11 @@
-import { computed, type ReadonlySignal, type Signal } from '@unsignal/baseline';
+import { computed, isSignal, type ReadonlySignal, type Signal } from '@unsignal/baseline';
 
 export function readonly<T>(source: Signal<T>): ReadonlySignal<T>;
 export function readonly<T>(source: ReadonlySignal<T>): ReadonlySignal<T>;
 export function readonly<T>(source: Signal<T> | ReadonlySignal<T>): ReadonlySignal<T> {
-  return computed(() => source.value);
+  if (isSignal(source)) {
+    return computed(() => source.value);
+  }
+
+  return source;
 }
