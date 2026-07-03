@@ -6,7 +6,16 @@ Senior full-stack development engineer, proficient in business modeling and laye
 
 ## Goal
 
-Extend the original `Signal Primitive` without reduplicated
+Build a TypeScript-first reactive toolkit that brings proven reactive capabilities into a coherent signal model.
+
+`unsignal` is no longer positioned as a thin extension of an upstream signal primitive. The project should preserve a small explicit baseline runtime, then layer higher-level reactive capabilities inspired by systems such as `MobX`, `Vue` reactivity, and `Angular` signals without cloning their APIs wholesale.
+
+The guiding direction is:
+
+- Keep primitive signal behavior minimal, predictable, and framework-agnostic
+- Add semantic reactive utilities only when they compose cleanly with the baseline runtime
+- Avoid duplicating APIs across packages; each package should own a clear layer
+- Prefer explicit lifecycle and cleanup semantics for effects, reactions, watchers, resources, and framework bindings
 
 ## Tech Stack
 
@@ -26,23 +35,25 @@ After each OpenSpec archive action, identify the affected capabilities and packa
 
 ## Project
 
-The function is divided into multiple sub-packages. the prefix will be uniformly set as: `unsignal` (e.g. `@unsignal/react`)
+The project is divided into multiple sub-packages. The package prefix is uniformly set as `@unsignal` (for example, `@unsignal/react`).
 
-| Package              | Responsibility                  |
-| :------------------- | :------------------------------ |
-| `@unsignal/vue`      | Signal binding for Vue3         |
-| `@unsignal/react`    | Signal binding for React19      |
-| `@unsignal/core`     | Signal enhancement for original |
-| `@unsignal/baseline` | Signal builtin-implementation   |
+| Package              | Responsibility                                                     |
+| :------------------- | :----------------------------------------------------------------- |
+| `@unsignal/baseline` | Built-in primitive signal runtime                                  |
+| `@unsignal/core`     | Framework-agnostic reactive utilities built on baseline primitives |
+| `@unsignal/react`    | React 19 binding for the unsignal reactive model                   |
+| `@unsignal/vue`      | Vue 3 binding for the unsignal reactive model                      |
 
-> NOTE: The `@unsignal/baseline` remains WIP status, it doesn't have downsteram dependency yet!
+> NOTE: `@unsignal/baseline` remains WIP. Treat its public primitive contracts carefully because other packages are expected to compose on top of them.
 
 ```mermaid
 graph TD
+    baseline["@unsignal/baseline"]
     core["@unsignal/core"]
     vue["@unsignal/vue"]
     react["@unsignal/react"]
 
+    core -->|depends on| baseline
     vue -->|depends on| core
     react -->|depends on| core
 ```
