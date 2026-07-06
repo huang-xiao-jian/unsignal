@@ -14,6 +14,7 @@ pnpm add @unsignal/core
 
 - Import the baseline utility surface from `@unsignal/core`
 - Import the async resource primitive from `@unsignal/core/resource`
+- Import MobX-flavored Stage 3 decorators from `@unsignal/core/mobx`
 
 ### Migration Note
 
@@ -235,6 +236,52 @@ const refreshed = userResource.reload();
 console.log(refreshed); // true
 
 userResource.destroy();
+```
+
+### `@unsignal/core/mobx`
+
+Use MobX-flavored decorators for class-based reactive models without adding those decorators to the root `@unsignal/core` export.
+
+```ts
+import { action, computed, observable } from '@unsignal/core/mobx';
+```
+
+- Supports 2022 Stage 3 decorators only
+- Use `@observable accessor` for signal-backed instance state
+- Use `@computed` on getters for per-instance derived values
+- Use `@action` on methods to batch mutations through baseline action semantics
+- Use `@action.bound` when an extracted method must keep its instance receiver
+
+```ts
+import { action, computed, observable } from '@unsignal/core/mobx';
+
+class Counter {
+  @observable accessor count = 0;
+
+  @computed
+  get doubled() {
+    return this.count * 2;
+  }
+
+  @action
+  increment() {
+    this.count += 1;
+  }
+
+  @action.bound
+  reset() {
+    this.count = 0;
+  }
+}
+
+const counter = new Counter();
+const reset = counter.reset;
+
+counter.increment();
+console.log(counter.doubled); // 2
+
+reset();
+console.log(counter.count); // 0
 ```
 
 ### `reaction(fn, callback)`

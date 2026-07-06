@@ -16,7 +16,9 @@ Provides `mobx-react-lite`-style reactive bridging between `@unsignal/baseline` 
 
 ## Requirements
 
-- **React >= 19**
+- **React >= 19**; lower React versions are unsupported
+- Function components only; class components are unsupported
+- Deprecated React integration patterns such as `forwardRef` and `contextTypes` are unsupported
 - `@unsignal/baseline >= 1.0.0`
 - `immer >= 11` for `useSignalState`
 
@@ -171,13 +173,15 @@ Matches reactive cases and renders the first matching branch.
 import type { ReactNode } from 'react';
 import type { ReadonlySignal } from '@unsignal/baseline';
 
+type Renderable<T> = ReactNode | ((value: T) => ReactNode);
+
 interface CaseProps<T> {
   is: T;
-  children: ReactNode | ((value: T) => ReactNode);
+  children: Renderable<T>;
 }
 
 interface DefaultProps {
-  children: ReactNode | ((value: unknown) => ReactNode);
+  children: Renderable<unknown>;
 }
 
 interface SwitchProps<T> {
@@ -186,7 +190,13 @@ interface SwitchProps<T> {
   children: ReactNode;
 }
 
-function Switch<T>(props: SwitchProps<T>): ReactNode;
+interface SwitchComponent {
+  <T>(props: SwitchProps<T>): ReactNode;
+  Case: <T>(props: CaseProps<T>) => ReactNode;
+  Default: (props: DefaultProps) => ReactNode;
+}
+
+const Switch: SwitchComponent;
 ```
 
 **Static children:**
@@ -302,8 +312,13 @@ Read-write hook for writable signals with immer-powered mutation support.
 
 ```ts
 import type { Signal } from '@unsignal/baseline';
+import type { Draft } from 'immer';
 
-type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
+type Primitive = string | number | boolean | bigint | symbol | null | undefined;
+
+type Mutator<T> = T extends Primitive
+  ? (updater: T | ((prev: T) => T)) => void
+  : (updater: (draft: Draft<T>) => void) => void;
 
 function useSignalState<T>(signal: Signal<T>): [T, Mutator<T>];
 ```

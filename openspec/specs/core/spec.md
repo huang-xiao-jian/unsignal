@@ -436,7 +436,7 @@ function resource<TParams, TValue>(
 
 ```ts
 import { signal } from '@unsignal/baseline';
-import { resource } from '@unsignal/core';
+import { resource } from '@unsignal/core/resource';
 
 interface User {
   id: number;
@@ -462,7 +462,7 @@ const userResource = resource({
 
 ```ts
 import { signal } from '@unsignal/baseline';
-import { resource } from '@unsignal/core';
+import { resource } from '@unsignal/core/resource';
 
 const query = signal<string | undefined>('hello');
 
