@@ -1,6 +1,6 @@
 # @unsignal/rxjs
 
-Framework-agnostic RxJS interoperability for [`@unsignal/baseline`](../baseline/README.md).
+RxJS interoperability for built-in **Signal Primitives**
 
 ## Installation
 
@@ -8,13 +8,11 @@ Framework-agnostic RxJS interoperability for [`@unsignal/baseline`](../baseline/
 pnpm add @unsignal/baseline @unsignal/rxjs rxjs
 ```
 
-> `@unsignal/baseline` provides the signal primitive runtime. `rxjs` remains an explicit consumer dependency.
-
 ## API
 
 ### `toObservable(source)`
 
-Expose a baseline readonly signal as an `RxJS` `Observable`.
+Expose a baseline readonly signal as an `Observable`.
 
 ```ts
 import type { ReadonlySignal } from '@unsignal/baseline';
@@ -47,10 +45,11 @@ subscription.unsubscribe();
 
 ### `toSignal(source$, options?)`
 
-Expose the latest value from an `RxJS` `Observable` through a disposable readonly signal-like facade.
+Expose the latest observable value through a disposable readonly signal-like
+facade.
 
 ```ts
-import type { ReadonlySignal } from '@unsignal/baseline';
+import type { Disposable } from '@unsignal/baseline';
 import type { Observable } from 'rxjs';
 
 interface ToSignalOptions<T> {
@@ -62,9 +61,7 @@ interface ReadonlySignalLike<TValue> {
   peek(): TValue;
 }
 
-interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue> {
-  dispose(): void;
-}
+interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue>, Disposable {}
 
 function toSignal<T>(
   source$: Observable<T>,
@@ -78,11 +75,10 @@ function toSignal<T>(
 ```
 
 - Subscribes eagerly when `toSignal(...)` is called
-- Returns the latest reflected value only
-- Uses `initialValue` when provided, otherwise exposes `undefined` before the first emission
+- Uses `initialValue` when provided
+- Exposes `undefined` before the first emission when no `initialValue` is given
 - Retains the latest reflected value after source error or completion
 - Exposes `value`, `peek()`, and `dispose()` only
-- Requires explicit `dispose()` ownership
 
 ```ts
 import { Subject } from 'rxjs';
@@ -99,11 +95,6 @@ console.log(view.value); // 2
 
 view.dispose();
 ```
-
-### Migration
-
-- Update reads from `view.value.value` to `view.value`.
-- The value returned by `toSignal(...)` is not a baseline `ReadonlySignal` instance. Treat it as the documented `ReadonlySignalLike` facade with `value`, `peek()`, and `dispose()`.
 
 ## Lifecycle Ownership
 

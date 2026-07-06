@@ -1,29 +1,17 @@
 # @unsignal/vue
 
-> Signal binding for Vue 3, powered by `@unsignal/baseline`.
-
-Provides `mobx-vue-lite`-style reactive bridging between `@unsignal/baseline` and Vue 3's reactivity system.
-
-## Features
-
-- Signal-to-`ShallowRef` bridging via `useSignalValue`
-- Read-write state with `useSignalState`
-- Renderless reactive `Observer`
-- Global registration via `SignalPlugin`
-- Automatic cleanup with `onScopeDispose`
-- SSR compatible
-- TypeScript first-class
+Signal bindings for Vue 3 with built-in **Signal Primitivies**
 
 ## Requirements
 
-- **Vue >= 3.5**
-- `@unsignal/baseline >= 1.0.0`
-- `immer >= 11` for `useSignalState`
+- `vue >= 3.5`
+- `immer >= 11`
+- `@unsignal/baseline`
 
 ## Installation
 
 ```bash
-pnpm add @unsignal/baseline @unsignal/vue immer
+pnpm add @unsignal/baseline @unsignal/vue vue immer
 ```
 
 ## API
@@ -41,7 +29,7 @@ function useSignalValue<T>(source: ReadonlySignal<T>): Readonly<ShallowRef<T>>;
 
 ```vue
 <script setup lang="ts">
-import { signal, computed } from '@unsignal/baseline';
+import { computed, signal } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
@@ -53,7 +41,6 @@ const doubledValue = useSignalValue(doubled);
 
 <template>
   <p>{{ value }} x 2 = {{ doubledValue }}</p>
-  <button @click="count.value++">+1</button>
 </template>
 ```
 
@@ -70,8 +57,6 @@ type Mutator<T> = (updater: T | ((draft: T) => T | void)) => void;
 function useSignalState<T>(source: Signal<T>): [Readonly<ShallowRef<T>>, Mutator<T>];
 ```
 
-**Primitive types:**
-
 ```vue
 <script setup lang="ts">
 import { signal } from '@unsignal/baseline';
@@ -87,44 +72,9 @@ const [value, mutate] = useSignalState(count);
 </template>
 ```
 
-**Objects / arrays with immer:**
-
-```vue
-<script setup lang="ts">
-import { signal } from '@unsignal/baseline';
-import { useSignalState } from '@unsignal/vue';
-
-interface Todo {
-  id: number;
-  text: string;
-  done: boolean;
-}
-
-const todos = signal<Todo[]>([]);
-const [items, mutate] = useSignalState(todos);
-
-function onToggle(id: number) {
-  mutate((draft) => {
-    const todo = draft.find((t) => t.id === id);
-    if (todo) todo.done = !todo.done;
-  });
-}
-</script>
-
-<template>
-  <ul>
-    <li v-for="item in items" :key="item.id" @click="onToggle(item.id)">
-      {{ item.text }} {{ item.done ? '⚡️' : '📦️' }}
-    </li>
-  </ul>
-</template>
-```
-
 ### `Observer`
 
-A renderless component that tracks signal reads in its default slot.
-
-**Local registration:**
+Renderless component that tracks signal reads in its default slot.
 
 ```vue
 <script setup lang="ts">
@@ -135,19 +85,15 @@ const count = signal(0);
 </script>
 
 <template>
-  <div>
-    <h1>Static Header</h1>
-    <Observer>
-      <p>Count: {{ count.value }}</p>
-    </Observer>
-    <button @click="count.value++">+1</button>
-  </div>
+  <Observer>
+    <p>Count: {{ count.value }}</p>
+  </Observer>
 </template>
 ```
 
 ### `SignalPlugin`
 
-Registers `Observer` globally for app-wide usage.
+Vue plugin that registers `Observer` globally.
 
 ```ts
 import { createApp } from 'vue';
@@ -160,26 +106,23 @@ app.use(SignalPlugin);
 app.mount('#app');
 ```
 
-## Vue Reactivity Integration
+## Vue Integration
 
-The `ShallowRef` returned by `useSignalValue` works with `watch`, `computed`, and templates.
+The `ShallowRef` returned by `useSignalValue()` works with `templates`, `watch`,
+and Vue `computed`.
 
 ```ts
-import { watch, computed as vueComputed } from 'vue';
+import { computed as vueComputed, watch } from 'vue';
 import { signal } from '@unsignal/baseline';
 import { useSignalValue } from '@unsignal/vue';
 
 const count = signal(0);
-
-// Use in setup
 const value = useSignalValue(count);
 
-// Works with Vue watch
-watch(value, (newVal) => {
-  console.log('count changed:', newVal);
+watch(value, (newValue) => {
+  console.log('count changed:', newValue);
 });
 
-// Works with Vue computed
 const label = vueComputed(() => `Count is ${value.value}`);
 ```
 
