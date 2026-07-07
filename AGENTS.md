@@ -29,10 +29,6 @@ The guiding direction is:
 - [testing](./docs/testing.md) Automation testing guidelines and instructions, it is necessary to understand them before generating test case code
 - [convention](./docs/conventions.md) Code writing standards require that one must have a clear understanding before generating code examples or writing actual business code.
 
-## OpenSpec Archive Rule
-
-After each OpenSpec archive action, identify the affected capabilities and packages from the change's delta specs, synced main specs, and implementation files. For every affected package, review its user-facing `README.md` and update it when the archived change alters public APIs, behavior, migration guidance, or usage examples.
-
 ## Project
 
 The project is divided into multiple sub-packages. The package prefix is uniformly set as `@unsignal` (for example, `@unsignal/react`).
@@ -61,7 +57,7 @@ graph TD
     react -->|depends on| core
 ```
 
-The packages and stable OpenSpec capabilities follow the same structure:
+The packages and project specs follow the same structure:
 
 ```shell
 └── packages
