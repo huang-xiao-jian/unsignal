@@ -45,61 +45,58 @@ subscription.unsubscribe();
 
 ### `toSignal(source$, options?)`
 
-Expose the latest observable value through a disposable readonly signal-like
-facade.
+Expose the latest observable value through a readonly signal.
 
 ```ts
-import type { Disposable } from '@unsignal/baseline';
+import type { ReadonlySignal } from '@unsignal/baseline';
 import type { Observable } from 'rxjs';
 
 interface ToSignalOptions<T> {
   initialValue?: T;
+  signal?: AbortSignal;
 }
-
-interface ReadonlySignalLike<TValue> {
-  readonly value: TValue;
-  peek(): TValue;
-}
-
-interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue>, Disposable {}
 
 function toSignal<T>(
   source$: Observable<T>,
   options: ToSignalOptions<T> & { initialValue: T }
-): ObservableSignal<T>;
+): ReadonlySignal<T>;
 
 function toSignal<T>(
   source$: Observable<T>,
   options?: ToSignalOptions<T>
-): ObservableSignal<T | undefined>;
+): ReadonlySignal<T | undefined>;
 ```
 
 - Subscribes eagerly when `toSignal(...)` is called
 - Uses `initialValue` when provided
 - Exposes `undefined` before the first emission when no `initialValue` is given
+- Accepts an optional `AbortSignal` for subscription teardown ownership
 - Retains the latest reflected value after source error or completion
-- Exposes `value`, `peek()`, and `dispose()` only
+- Remains readable after the upstream subscription ends
 
 ```ts
-import { Subject } from 'rxjs';
+import { interval, map } from 'rxjs';
 import { toSignal } from '@unsignal/rxjs';
 
-const source$ = new Subject<number>();
-const view = toSignal(source$, { initialValue: 0 });
+const controller = new AbortController();
+const source$ = interval(1000).pipe(map((value) => value + 1));
+const tick = toSignal(source$, {
+  initialValue: 0,
+  signal: controller.signal,
+});
 
-console.log(view.value); // 0
-console.log(view.peek()); // 0
+console.log(tick.value); // 0
 
-source$.next(2);
-console.log(view.value); // 2
-
-view.dispose();
+setTimeout(() => {
+  controller.abort();
+  console.log(tick.value); // latest emitted value
+}, 3500);
 ```
 
 ## Lifecycle Ownership
 
 - `toObservable(source)` creates subscription-scoped signal tracking. Each `Observable` subscriber owns its own `unsubscribe()`.
-- `toSignal(source$)` creates an eager `Observable` subscription immediately. The caller owns `dispose()`.
+- `toSignal(source$)` creates an eager `Observable` subscription immediately. The caller may provide an `AbortSignal` to own teardown.
 - If the source observable errors or completes, the latest reflected signal value is retained and no further updates are applied.
 
 ## License

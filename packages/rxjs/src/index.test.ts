@@ -1,7 +1,7 @@
+import type { ReadonlySignal } from '@unsignal/baseline';
 import { signal } from '@unsignal/baseline';
 import { Observable, Subject } from 'rxjs';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import type { ObservableSignal, ReadonlySignalLike } from './index';
 import { toObservable, toSignal } from './index';
 
 describe('toObservable', () => {
@@ -60,8 +60,7 @@ describe('toSignal', () => {
     const view = toSignal(source$);
 
     expect(subscriptions).toBe(1);
-
-    view.dispose();
+    expect(view.value).toBeUndefined();
   });
 
   it('should expose undefined before the first emission when no initial value is provided', () => {
@@ -70,19 +69,21 @@ describe('toSignal', () => {
 
     expect(view.value).toBeUndefined();
     expect(view.peek()).toBeUndefined();
-
-    view.dispose();
   });
 
   it('should narrow the value type when initialValue is provided', () => {
     const source$ = new Subject<number>();
     const view = toSignal(source$, { initialValue: 1 });
 
-    expectTypeOf(view).toEqualTypeOf<ObservableSignal<number>>();
-    expectTypeOf(view).toExtend<ReadonlySignalLike<number>>();
+    expectTypeOf(view).toEqualTypeOf<ReadonlySignal<number>>();
     expect(view.value).toBe(1);
+  });
 
-    view.dispose();
+  it('should widen the value type when initialValue is omitted', () => {
+    const source$ = new Subject<number>();
+    const view = toSignal(source$);
+
+    expectTypeOf(view).toEqualTypeOf<ReadonlySignal<number | undefined>>();
   });
 
   it('should update the latest value from observable emissions', () => {
@@ -94,8 +95,6 @@ describe('toSignal', () => {
 
     expect(view.value).toBe(4);
     expect(view.peek()).toBe(4);
-
-    view.dispose();
   });
 
   it('should retain the latest reflected value after source error', () => {
@@ -106,8 +105,6 @@ describe('toSignal', () => {
     source$.error(new Error('boom'));
 
     expect(view.value).toBe(3);
-
-    view.dispose();
   });
 
   it('should retain the latest reflected value after source completion', () => {
@@ -118,29 +115,42 @@ describe('toSignal', () => {
     source$.complete();
 
     expect(view.value).toBe(7);
-
-    view.dispose();
   });
 
-  it('should expose only the signal-like facade contract', () => {
+  it('should expose the readonly signal contract instead of a disposable facade', () => {
     const source$ = new Subject<number>();
     const view = toSignal(source$, { initialValue: 1 });
 
     expect(view.value).toBe(1);
     expect(view.peek()).toBe(1);
-    expect('subscribe' in view).toBe(false);
-    expect('toJSON' in view).toBe(false);
-
-    view.dispose();
+    expect('dispose' in view).toBe(false);
   });
 
-  it('should stop updating after dispose', () => {
+  it('should stop updating after the abort signal is aborted', () => {
     const source$ = new Subject<number>();
-    const view = toSignal(source$, { initialValue: 1 });
+    const controller = new AbortController();
+    const view = toSignal(source$, {
+      initialValue: 1,
+      signal: controller.signal,
+    });
 
-    view.dispose();
+    source$.next(4);
+    controller.abort();
     source$.next(9);
 
-    expect(view.value).toBe(1);
+    expect(view.value).toBe(4);
+  });
+
+  it('should teardown the observable subscription when aborted', () => {
+    const teardown = vi.fn();
+    const controller = new AbortController();
+    const source$ = new Observable<number>(() => {
+      return teardown;
+    });
+
+    toSignal(source$, { signal: controller.signal });
+    controller.abort();
+
+    expect(teardown).toHaveBeenCalledTimes(1);
   });
 });
