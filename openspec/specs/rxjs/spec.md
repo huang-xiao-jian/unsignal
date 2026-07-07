@@ -1,166 +1,91 @@
 # @unsignal/rxjs
 
-## Business Objective
+## Goal
 
-Provide framework-agnostic `RxJS` interoperability that composes with `@unsignal/baseline`.
+Provide framework-agnostic `RxJS` interoperability between **Signal Primitive** and **Observable**.
 
-## Business Requirements
+## Principles
 
-- Framework-agnostic bridge utilities for `RxJS` observables
-- Complete `TypeScript` type declarations
 - Explicit lifecycle and teardown ownership for observable-backed subscriptions
+- Strictly Framework-agnostic bridge utilities
 
-## Business Design
+## API References
 
-### Design Principles
-
-- `@unsignal/rxjs` complements `@unsignal/baseline` without expanding baseline primitive responsibilities
-- `@unsignal/rxjs` MAY depend on `@unsignal/core` when shared utilities improve consistency, but `RxJS`-specific APIs MUST remain in this package
-- `toSignal` and `toObservable` use explicit ownership semantics and MUST NOT hide lifecycle behavior behind framework-managed contexts
-
-## Requirements
-
-### Requirement: RxJS interop ships as a separate optional package
-
-The project SHALL provide `RxJS` interoperability through a dedicated `@unsignal/rxjs` package and SHALL keep the `rxjs` dependency boundary out of `@unsignal/core` and `@unsignal/baseline`.
-
-#### Scenario: Consumer installs only the interop package when needed
-
-- **WHEN** a consumer wants to bridge baseline signals with `RxJS`
-- **THEN** the documented public entrypoint MUST be `@unsignal/rxjs`
-
-#### Scenario: Core package remains free of RxJS-specific APIs
-
-- **WHEN** a consumer imports from `@unsignal/core`
-- **THEN** the package MUST NOT expose `RxJS` bridge APIs such as `toObservable` or `toSignal`
-
-### Requirement: RxJS interop defines a clear public API surface
-
-The `@unsignal/rxjs` package SHALL document and implement the following initial public API definitions:
+### `toObservable`
 
 ```ts
-import type { Disposable, ReadonlySignal } from '@unsignal/baseline';
+import type { Observable } from 'rxjs';
+
+function toObservable<T>(source: ReadonlySignal<T>): Observable<T>;
+```
+
+**Behavior:**
+
+- The `Observable` only connect deeper `Signal` when subscribed
+
+**Usage Example:**
+
+```ts
+import { signal } from '@unsignal/baseline';
+import { toObservable } from '@unsignal/rxjs';
+
+const counter = signal(0);
+const counter$ = toObservable(counter);
+
+const subscription = counter$.subscribe((value) => {
+  console.log('counter:', value);
+});
+
+counter.value = 1;
+counter.value = 2;
+
+subscription.unsubscribe();
+```
+
+### `toSignal`
+
+```ts
+import type { ReadonlySignal } from '@unsignal/baseline';
 import type { Observable } from 'rxjs';
 
 interface ToSignalOptions<T> {
   initialValue?: T;
+  signal?: AbortSignal;
 }
 
-interface ReadonlySignalLike<TValue> {
-  readonly value: TValue;
-  peek(): TValue;
-}
-
-interface ObservableSignal<TValue> extends ReadonlySignalLike<TValue>, Disposable {}
-
-function toObservable<T>(source: ReadonlySignal<T>): Observable<T>;
 function toSignal<T>(
   source$: Observable<T>,
   options: ToSignalOptions<T> & { initialValue: T }
-): ObservableSignal<T>;
+): ReadonlySignal<T>;
 function toSignal<T>(
   source$: Observable<T>,
   options?: ToSignalOptions<T>
-): ObservableSignal<T | undefined>;
+): ReadonlySignal<T | undefined>;
 ```
 
-#### Scenario: Consumers can rely on a stable initial API shape
+**Behavior:**
 
-- **WHEN** a consumer reads the package README or TypeScript declarations
-- **THEN** the interop surface MUST include `toObservable`, `toSignal`, `ToSignalOptions`, `ReadonlySignalLike`, and `ObservableSignal`
+- Subscribe `Observable` eagerly at creation time
+- Upstream Observable's error / complete never bother downstream `Signal`, which retains the latest reflected value
+- Downstream `Signal` remains readable even the subscription ends
 
-#### Scenario: `toSignal` narrows the value type when `initialValue` is provided
+**Usage Example:**
 
-- **WHEN** a consumer calls `toSignal(source$, { initialValue })`
-- **THEN** the returned disposable readonly signal-like object MUST expose `.value` as `T` rather than `T | undefined`
+```ts
+import { interval, map } from 'rxjs';
+import { toSignal } from '@unsignal/rxjs';
 
-### Requirement: `toObservable` exposes a baseline signal as an RxJS observable
+const controller = new AbortController();
+const count$ = interval(1000).pipe(map((value) => value + 1));
+const tick = toSignal(count$, {
+  initialValue: 0,
+  signal: controller.signal,
+});
 
-The `@unsignal/rxjs` package SHALL provide a `toObservable` API that converts a baseline `ReadonlySignal<T>` into an `Observable<T>`.
+console.log(tick.value); // 0
 
-#### Scenario: Subscription receives the current signal value immediately
-
-- **WHEN** a consumer subscribes to the observable returned by `toObservable`
-- **THEN** the subscriber MUST receive the signal's current value before later change notifications
-
-#### Scenario: Subscriber receives later signal updates
-
-- **WHEN** the source signal value changes after subscription
-- **THEN** the observable returned by `toObservable` MUST emit the updated value to that subscriber
-
-#### Scenario: Unsubscribing stops signal tracking for that subscription
-
-- **WHEN** the consumer unsubscribes from the observable returned by `toObservable`
-- **THEN** the bridge MUST release the reactive tracking and stop emitting further signal updates to that subscription
-
-### Requirement: `toSignal` exposes an observable through an explicitly managed signal controller
-
-The `@unsignal/rxjs` package SHALL provide a `toSignal` API that subscribes to an `Observable<T>` and exposes only its latest value through a disposable readonly signal-like object with explicit teardown semantics.
-
-#### Scenario: Initial value is available before the first observable emission
-
-- **WHEN** a consumer calls `toSignal` with an `initialValue` option
-- **THEN** the returned disposable readonly signal-like object MUST expose that initial value through `.value` before the observable emits
-
-#### Scenario: Signal stays simple before the first emission when no initial value is provided
-
-- **WHEN** a consumer calls `toSignal` without an `initialValue` option and the observable has not emitted yet
-- **THEN** the returned disposable readonly signal-like object MUST read as `undefined`
-
-#### Scenario: `toSignal` returns a disposable readonly signal-like object
-
-- **WHEN** a consumer calls `toSignal`
-- **THEN** the return value MUST expose the latest value through direct signal reads and teardown as `dispose(): void`
-
-#### Scenario: `toSignal` does not expose a baseline readonly signal instance
-
-- **WHEN** a consumer receives the value returned by `toSignal`
-- **THEN** the bridge MUST expose a `ReadonlySignalLike` facade contract rather than documenting or requiring a baseline `ReadonlySignal` instance identity
-
-#### Scenario: `toSignal` subscribes eagerly at creation time
-
-- **WHEN** a consumer calls `toSignal`
-- **THEN** the bridge MUST subscribe to the source observable immediately without waiting for the returned signal to be read or observed
-
-#### Scenario: Observable emissions update the latest signal value
-
-- **WHEN** the source observable emits a new value
-- **THEN** the disposable readonly signal-like object returned by `toSignal` MUST update to that latest value
-
-#### Scenario: Observable error retains the latest reflected value
-
-- **WHEN** the source observable errors after one or more values have been reflected
-- **THEN** the returned signal-like object MUST stop receiving future updates and MUST retain the latest reflected value
-
-#### Scenario: Observable completion retains the latest reflected value
-
-- **WHEN** the source observable completes after one or more values have been reflected
-- **THEN** the returned signal-like object MUST stop receiving future updates and MUST retain the latest reflected value
-
-#### Scenario: `toSignal` does not expose separate signal-backed terminal state
-
-- **WHEN** a consumer uses the value returned by `toSignal`
-- **THEN** the contract MUST focus on latest-value reflection and MUST NOT require separate signal-backed error or completion state
-
-#### Scenario: Dispose tears down the underlying observable subscription
-
-- **WHEN** the consumer calls `dispose()` on the value returned by `toSignal`
-- **THEN** the bridge MUST unsubscribe from the source observable and stop updating the exposed value
-
-### Requirement: `toObservable` remains subscription-driven and non-terminating by default
-
-The `@unsignal/rxjs` package SHALL treat `toObservable(source)` as a subscription-scoped bridge over the current and future values of the source signal and SHALL NOT complete or error unless the subscriber unsubscribes.
-
-#### Scenario: `toObservable` does not complete on its own
-
-- **WHEN** a consumer subscribes to the observable returned by `toObservable`
-- **THEN** the bridge MUST remain active until that subscription is unsubscribed
-
-### Requirement: RxJS interop documents lifecycle and ownership semantics
-
-The `@unsignal/rxjs` package SHALL document that `toObservable` uses subscription-scoped tracking and that `toSignal` requires explicit teardown ownership outside framework-managed lifecycles.
-
-#### Scenario: Documentation explains teardown responsibility
-
-- **WHEN** a consumer reads the `@unsignal/rxjs` package README
-- **THEN** the examples and guidance MUST show who owns `dispose()` for `toSignal` and `unsubscribe()` for `toObservable`
+setTimeout(() => {
+  controller.abort();
+  console.log(tick.value); // latest emitted value
+}, 3500);
+```
