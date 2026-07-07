@@ -1,31 +1,30 @@
 # @unsignal/react
 
-## Business Objective
+## Goal
 
-Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite)-style `@unsignal/baseline` reactive bridging capabilities
+Provide [mobx-react-lite](https://github.com/mobxjs/mobx/tree/main/packages/mobx-react-lite) style reactive bridging capabilities
 
-## Business Requirements
+## Principles
 
-- Support `React 19+`, **explicitly incompatible with lower versions!!!**
+- **Concurrent Mode** safe reactivitiy integration
+- **Builtin Performance** without requirement for `react-compiler`
+
+## Compatibility
+
+- Support `React 19+`
+- Support `Function Component`
 - Support `SSR` mode
-- Support `Function Component`, explicitly does not support `Class Component`
-- Does not support deprecated features, including: `forwardRef` / `contextTypes`
-- Complete `TypeScript` type declarations
 
-## Business Design
+**Explicitly Incompatibility:**
 
-### Design Principles
+- It doesn't support Lower versions
+- It doesn't support legacy flavor: `Class Component` / `forwardRef` / `contextTypes`
 
-- Assume Signal management **stay outside of components**, the `@unsignal/react` provides only the **consumption** bridge and explicitly depends on `@unsignal/baseline` as the signal primitive provider
-- Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of non-public methods is strictly prohibited!**
-- `observer` implementation is based on `React.useSyncExternalStore` + `effect()` dependency tracking: uses `useSyncExternalStore` to subscribe to external signal changes, `effect()` automatically tracks `signal` dependencies read by the component during the render phase, and signal changes trigger re-renders
-- Control-flow components (`Show` / `For` / `Switch`) have **built-in fine-grained reactivity**: each item / branch is independently tracked so that only the affected DOM nodes re-render
+## API Reference
 
-### API Reference
+### `observer`
 
-#### `observer`
-
-Wraps a `Function Component` into a reactive component. Automatically tracks `signal` reads within the component during rendering; any `signal` change triggers a re-render
+Wraps a `Function Component` into a reactive component. Automatically tracks `Signal` reads within the component during rendering; any `Signal` change triggers a re-render
 
 ```ts
 import type { FunctionComponent } from 'react';
@@ -42,9 +41,8 @@ function observer<P extends object>(
 
 **Behavior:**
 
-- Tracks `signal` reads during render; re-renders on change
-- Internally uses `useSyncExternalStore` for concurrent-safe subscription
-- Equivalent to `React.memo` by default
+- Tracks `Signal` reads during render; re-renders on change
+- Builtin performance optimization, equivalent to `React.memo` by default
 
 **Usage Example:**
 
@@ -59,9 +57,9 @@ const Counter = observer(function Counter() {
 });
 ```
 
-#### `Observer`
+### `Observer`
 
-`Render prop` component for inline reactive rendering fragments within the component tree. Suitable for scenarios where `signal` needs to be used locally in a non-`observer wrapped` component
+`Render prop` component for inline reactive rendering fragments within the component tree. Suitable for scenarios where `Signal` needs to be used locally in a non-`observer wrapped` component
 
 ```ts
 import type { FunctionComponent, ReactNode } from 'react';
@@ -91,9 +89,9 @@ function App() {
 }
 ```
 
-#### `Show`
+### `Show`
 
-Conditionally renders `children` when the reactive boolean signal is truthy; otherwise renders `fallback`
+Conditionally renders `children` when the reactive boolean `Signal` is truthy; otherwise renders `fallback`
 
 ```ts
 import type { ReadonlySignal } from '@unsignal/baseline';
@@ -112,11 +110,11 @@ function Show(props: ShowProps): ReactNode;
 
 - Accepts only `ReadonlySignal<boolean>` as the condition source
 - Supports either static `children` content or a zero-argument render function
-- Tracks signal reads inside the active branch through an internal `observer` wrapper
+- Tracks `Signal` reads inside the active branch through an internal `observer` wrapper
 
-#### `For`
+### `For`
 
-Renders a reactive list from a signal-backed array
+Renders a reactive list from a `Signal` array
 
 ```ts
 import type { ReadonlySignal, Signal } from '@unsignal/baseline';
@@ -138,7 +136,7 @@ function For<T>(props: ForProps<T>): ReactNode;
 - Uses `fallback` when the array is empty
 - Tracks signal reads inside each rendered item through an internal `observer` wrapper
 
-#### `Switch`
+### `Switch`
 
 Matches the current value of a reactive source against `Case` entries and renders the first match, otherwise the `Default` entry when present
 
@@ -180,7 +178,7 @@ const Switch: SwitchComponent;
 - Supports both static children and render functions in `Case` and `Default`
 - Tracks signal reads inside the active branch through an internal `observer` wrapper
 
-#### `useSignalValue`
+### `useSignalValue`
 
 Reads the current value from an external `Signal` and subscribes to changes. No `observer` wrapping needed — reactive re-rendering works standalone
 
@@ -214,7 +212,7 @@ function Counter() {
 }
 ```
 
-#### `useSignalState`
+### `useSignalState`
 
 Reads and writes an external writable `Signal`, with an API style similar to `useState`. Internally integrates `immer` to support mutable-style updates, simplifying complex state updates. `immer` is a required `peerDependency`.
 
@@ -295,7 +293,7 @@ function TodoList() {
 }
 ```
 
-#### `useSignalEffect`
+### `useSignalEffect`
 
 Runs a side-effect that automatically tracks signal dependencies. Re-runs whenever any tracked signal changes. Cleans up automatically on unmount.
 
@@ -332,7 +330,7 @@ function Logger() {
 }
 ```
 
-#### `useLiveSignal`
+### `useLiveSignal`
 
 Bridges a normal React value (from props, `useState`, `useMemo`, etc.) into the signal world. Returns a `ReadonlySignal` that automatically stays in sync with the supplied value on every render. Useful for exposing React-owned state to signal-based consumers without manual synchronization.
 
@@ -389,28 +387,3 @@ function UserView({ user }: { user: User }) {
   return <p>{userSig.value.name}</p>;
 }
 ```
-
-## Canonical Requirements
-
-### Requirement: React bridge targets baseline primitives
-
-`@unsignal/react` SHALL provide its React bridge APIs for signals created by `@unsignal/baseline`.
-
-#### Scenario: React hooks and components accept baseline signals
-
-- **WHEN** a consumer passes a writable or readonly signal created by `@unsignal/baseline` into `observer`, `Observer`, `useSignalValue`, `useSignalState`, `useSignalEffect`, `Show`, `For`, `Switch`, or `useLiveSignal`-driven flows
-- **THEN** the documented and supported behavior MUST operate on baseline signal primitives
-
-#### Scenario: React package guidance points to baseline
-
-- **WHEN** a consumer reads the package README, API examples, or installation instructions
-- **THEN** the package MUST instruct consumers to install and import `@unsignal/baseline` as the primitive provider
-
-### Requirement: React bridge preserves non-model behavior during the migration
-
-Replacing the primitive provider SHALL NOT change the documented bridge semantics of the existing React APIs beyond the package and type source they target.
-
-#### Scenario: Existing React bridge semantics stay intact
-
-- **WHEN** a consumer uses the existing `@unsignal/react` APIs with baseline signals
-- **THEN** render tracking, external store subscriptions, effect cleanup, and writable signal mutation behavior MUST remain compatible with the current documented React bridge behavior
