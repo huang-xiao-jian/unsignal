@@ -1,129 +1,24 @@
 # @unsignal/baseline
 
-## Business Objective
+## Goal
 
 Implement a builtin `Signal Primitive` package for the `unsignal` ecosystem.
 
-## Business Requirements
+## Principles
 
-- Framework-agnostic reactive primitives
-- Complete `TypeScript` type declarations
-- Compatible primitive API surface for downstream packages such as `@unsignal/core`, `@unsignal/react`, and `@unsignal/vue`
-- No framework-specific bindings or model-construction helpers
+- Provide framework-agnostic reactive primitives
 
-## Business Design
+## Constraints
 
-### Design Principles
+- No framework bindings
+- No model-construction APIs
+- No higher-level state abstraction beyond primitive reactivity
 
-- `@unsignal/baseline` provides only primitive reactive capabilities
-- The package exposes the core signal primitive mental model: writable signals, derived signals, side effects, batching, and tracking control
-- `computed` is read-only and lazily evaluated
-- `batch` groups multiple writes into one visible update cycle
-- `untracked` allows reading signals without collecting dependencies
-- `action` is the mutation-oriented helper built on top of `batch` and `untracked`
-- The package does not provide `createModel` or other higher-level abstractions
+## API Reference
 
-## Requirements
+### `signal`
 
-### Requirement: Baseline primitives use explicit class implementations
-
-The `@unsignal/baseline` runtime SHALL implement its writable signal and derived signal primitives as explicit ECMAScript classes instead of constructor-function and prototype-composition patterns. The class-based implementation SHALL preserve the documented public behavior of `signal()`, `computed()`, and related reactive lifecycle hooks while making inheritance and instance responsibilities explicit in the runtime.
-
-#### Scenario: Writable signal instances are backed by a concrete class
-
-- **WHEN** `signal()` creates a writable signal instance
-- **THEN** the returned object MUST be an instance of a concrete writable signal class that owns its state, subscription links, and lifecycle methods directly through class construction
-
-#### Scenario: Computed instances extend the signal base class explicitly
-
-- **WHEN** `computed()` creates a derived signal instance
-- **THEN** the returned object MUST be backed by an explicit class that extends the writable signal base class or a shared signal base class without relying on prototype reassignment after declaration
-
-#### Scenario: Public primitive behavior remains compatible through the refactor
-
-- **WHEN** callers use the documented baseline APIs for reading, writing, subscribing, batching, and effect tracking
-- **THEN** the refactored class-based runtime MUST preserve the observable behavior and compatibility guarantees documented by the baseline capability
-
-### Requirement: Baseline signals use unsignal-owned runtime branding
-
-The `@unsignal/baseline` package SHALL use unsignal-owned runtime branding for its signal primitives. Writable signals and read-only computed signals MAY use distinct internal brand symbols so long as the supported runtime guard APIs continue to distinguish them correctly.
-
-#### Scenario: Writable signals use an unsignal-owned writable brand
-
-- **WHEN** a caller creates a writable signal with `signal()`
-- **THEN** the returned signal MUST carry an unsignal-owned writable runtime brand
-
-#### Scenario: Computed signals use an unsignal-owned readonly brand
-
-- **WHEN** a caller creates a derived signal with `computed()`
-- **THEN** the returned read-only signal MUST carry an unsignal-owned readonly runtime brand distinct from the writable signal brand
-
-### Requirement: Baseline provides runtime signal guard APIs
-
-The `@unsignal/baseline` package SHALL export `isSignal`, `isReadonlySignal`, and `isWritableSignal` as supported runtime guard functions for baseline primitives. These guard APIs are defined against baseline runtime instances and may rely on `instanceof Signal` semantics.
-
-#### Scenario: Generic baseline signals are recognized by isSignal
-
-- **WHEN** a caller passes a writable baseline signal created by `signal()` or a read-only baseline signal created by `computed()` to `isSignal`
-- **THEN** `isSignal` MUST return `true`
-
-#### Scenario: Writable signals are recognized by isWritableSignal
-
-- **WHEN** a caller passes a writable baseline signal created by `signal()` to `isWritableSignal`
-- **THEN** `isWritableSignal` MUST return `true`
-
-#### Scenario: Computed signals are not recognized as writable signals
-
-- **WHEN** a caller passes a read-only baseline signal created by `computed()` to `isWritableSignal`
-- **THEN** `isWritableSignal` MUST return `false`
-
-#### Scenario: Read-only baseline signals are recognized by isReadonlySignal
-
-- **WHEN** a caller passes a read-only baseline signal created by `computed()` to `isReadonlySignal`
-- **THEN** `isReadonlySignal` MUST return `true`
-
-#### Scenario: Writable signals are not recognized as read-only-only signals
-
-- **WHEN** a caller passes a writable baseline signal created by `signal()` to `isReadonlySignal`
-- **THEN** `isReadonlySignal` MUST return `false`
-
-#### Scenario: Non-signal values are rejected by all guards
-
-- **WHEN** a caller passes a non-signal value or an object that only partially resembles the signal API to `isSignal`, `isReadonlySignal`, or `isWritableSignal`
-- **THEN** each guard MUST return `false`
-
-### Requirement: Baseline effects expose resource-oriented disposal semantics
-
-The `@unsignal/baseline` package SHALL return a resource-oriented handle from `effect()` so effect teardown can be managed consistently with other disposable resources. The returned handle SHALL expose `dispose()` as its only direct teardown method. The package SHALL also keep `Subscription` as a separate concept and SHALL expose a standalone `asSubscription(disposable)` adapter for explicit subscription-shaped interoperability.
-
-#### Scenario: Effect handle is stored as a managed resource
-
-- **WHEN** a caller stores the value returned from `effect()` for later teardown
-- **THEN** the returned value MUST be an object resource rather than a callable teardown function
-
-#### Scenario: Effect handle supports direct disposal
-
-- **WHEN** a caller invokes `dispose()` on the returned handle
-- **THEN** the effect MUST stop tracking, run pending cleanup exactly once, and release its subscriptions
-
-#### Scenario: Effect handle omits symbol-based disposal
-
-- **WHEN** a caller inspects the returned handle
-- **THEN** the handle MUST NOT expose `Symbol.dispose` as a teardown entry point
-
-#### Scenario: Effect handle omits direct unsubscribe
-
-- **WHEN** a caller inspects the returned handle
-- **THEN** the handle MUST NOT expose `unsubscribe()` as a direct teardown entry point
-
-#### Scenario: Effect handle uses standalone subscription adaptation
-
-- **WHEN** a caller passes the returned handle to `asSubscription(disposable)`
-- **THEN** the result MUST be a `Subscription` object whose `unsubscribe()` performs the same teardown behavior as `dispose()`
-
-### Exported Types
-
-#### `SignalOptions`
+Creates a writable signal.
 
 ```ts
 interface SignalOptions<T = any> {
@@ -131,65 +26,16 @@ interface SignalOptions<T = any> {
   unwatched?: (this: Signal<T>) => void;
   name?: string;
 }
+
+function signal<T>(value: T, options?: SignalOptions<T>): Signal<T>;
+function signal<T = undefined>(): Signal<T | undefined>;
 ```
 
-**Behavior:**
+**Options Behavior:**
 
 - `watched` runs when the signal gains its first subscriber
 - `unwatched` runs when the signal loses its last subscriber
 - `name` is available for debugging-oriented usage
-
-#### `ReadonlySignal`
-
-```ts
-interface ReadonlySignal<T = any> {
-  readonly value: T;
-  readonly peek(): T;
-}
-```
-
-#### `Signal Guards`
-
-```ts
-function isSignal<T = unknown>(value: unknown): value is Signal<T> | ReadonlySignal<T>;
-function isReadonlySignal<T = unknown>(value: unknown): value is ReadonlySignal<T>;
-function isWritableSignal<T = unknown>(value: unknown): value is Signal<T>;
-```
-
-#### `EffectOptions`
-
-```ts
-interface EffectOptions {
-  name?: string;
-}
-```
-
-#### `Disposable`
-
-```ts
-interface Disposable {
-  dispose(): void;
-}
-```
-
-#### `Subscription`
-
-```ts
-interface Subscription {
-  unsubscribe(): void;
-}
-```
-
-### API Reference
-
-#### `signal`
-
-Creates a writable signal.
-
-```ts
-function signal<T>(value: T, options?: SignalOptions<T>): Signal<T>;
-function signal<T = undefined>(): Signal<T | undefined>;
-```
 
 **Behavior:**
 
@@ -197,8 +43,8 @@ function signal<T = undefined>(): Signal<T | undefined>;
 - reading `.value` participates in dependency tracking
 - writing `.value` notifies dependents when the value changes
 - `peek()` reads the current value without subscribing the surrounding reactive context
-- `subscribe()` immediately emits the current value, then emits again on later changes
-  **Usage Example:**
+
+**Usage Example:**
 
 ```ts
 import { signal } from '@unsignal/baseline';
@@ -209,11 +55,16 @@ count.value += 1;
 console.log(count.value); // 1
 ```
 
-#### `computed`
+### `computed`
 
 Creates a read-only derived signal.
 
 ```ts
+interface ReadonlySignal<T = any> {
+  readonly value: T;
+  readonly peek(): T;
+}
+
 function computed<T>(fn: () => T, options?: SignalOptions<T>): ReadonlySignal<T>;
 ```
 
@@ -238,7 +89,7 @@ const fullName = computed(() => `${first.value} ${last.value}`);
 console.log(fullName.value); // Ada Lovelace
 ```
 
-#### `isSignal`
+### `isSignal`
 
 Detects whether a value is any baseline signal.
 
@@ -252,7 +103,7 @@ function isSignal<T = unknown>(value: unknown): value is Signal<T> | ReadonlySig
 - returns `true` for read-only baseline signals created by `computed()`
 - returns `false` for non-signal values or partial lookalikes
 
-#### `isReadonlySignal`
+### `isReadonlySignal`
 
 Detects whether a value is a read-only baseline signal.
 
@@ -266,7 +117,7 @@ function isReadonlySignal<T = unknown>(value: unknown): value is ReadonlySignal<
 - returns `false` for writable baseline signals
 - returns `false` for non-signal values or partial lookalikes
 
-#### `isWritableSignal`
+### `isWritableSignal`
 
 Detects whether a value is a writable baseline signal.
 
@@ -280,11 +131,19 @@ function isWritableSignal<T = unknown>(value: unknown): value is Signal<T>;
 - returns `false` for read-only baseline signals such as `computed()` results
 - returns `false` for non-signal values or partial lookalikes
 
-#### `effect`
+### `effect`
 
 Creates a reactive side effect.
 
 ```ts
+interface EffectOptions {
+  name?: string;
+}
+
+interface Disposable {
+  dispose(): void;
+}
+
 function effect(
   fn: (() => void | (() => void)) | ((this: { dispose: () => void }) => void | (() => void)),
   options?: EffectOptions
@@ -300,11 +159,15 @@ function effect(
 - returns an object resource handle that stops further tracking and cleanup
 - exposes `dispose()` as its only direct teardown entry point
 
-#### `asSubscription`
+### `asSubscription`
 
 Adapts a disposable resource to a subscription-shaped object.
 
 ```ts
+interface Subscription {
+  unsubscribe(): void;
+}
+
 function asSubscription(disposable: Disposable): Subscription;
 ```
 
@@ -336,7 +199,7 @@ const subscription = asSubscription(
 subscription.unsubscribe();
 ```
 
-#### `batch`
+### `batch`
 
 Groups multiple writes into one update cycle.
 
@@ -351,7 +214,7 @@ function batch<T>(fn: () => T): T;
 - reactive effects flush after the outermost batch completes
 - reads inside the batch see the latest written values
 
-#### `untracked`
+### `untracked`
 
 Runs logic without dependency collection.
 
@@ -364,7 +227,7 @@ function untracked<T>(fn: () => T): T;
 - signal reads inside the callback do not subscribe the surrounding `effect` or `computed`
 - useful for incidental reads that should not affect reactivity
 
-#### `action`
+### `action`
 
 Wraps a function as an untracked batched mutation.
 
@@ -393,9 +256,3 @@ const increment = action(() => {
 
 increment();
 ```
-
-### Scope Constraints
-
-- No framework bindings
-- No model-construction APIs
-- No higher-level state abstraction beyond primitive reactivity
