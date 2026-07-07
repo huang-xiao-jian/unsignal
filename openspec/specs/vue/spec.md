@@ -1,30 +1,22 @@
 # @unsignal/vue
 
-## Business Objective
+## Goal
 
-Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master)-style `@unsignal/baseline` reactive bridging capabilities
+Provide [mobx-vue-lite](https://github.com/mobxjs/mobx-vue-lite/tree/master) style reactive bridging capabilities
 
-## Business Requirements
+## Principles
+
+- Convenient lifecycle and teardown management for preventing memory leaks
+
+## Compatibility
 
 - Support `Vue 3`, **explicitly incompatible with lower versions!!!**
-- Support `SSR` mode
-- Complete `TypeScript` type declarations
 
-## Business Design
+## API Reference
 
-### Design Principles
+### `useSignalValue`
 
-- Bridge `@unsignal/baseline`'s `Signal` into a `ShallowRef` recognizable by the `Vue 3` reactive system, enabling seamless usage of `Signal` in templates, `watch`, `computed`, and other scenarios
-- Focused complementary functionality, without duplicating `@unsignal/baseline`'s existing primitives (`signal` / `computed` / `effect`); `APIs` are not re-exported
-- Only use `@unsignal/baseline` public APIs (`signal` / `computed` / `effect` / `batch` / `untracked` / `peek`), **usage of the non-public `subscribe()` method is strictly prohibited**
-- Use `effect()` to implement Signal → Vue reactive system bridging: read `signal.value` inside the `effect` callback to establish dependency tracking; when the signal changes, `effect` automatically re-executes and syncs the new value to `shallowRef`
-- All `signal` subscriptions are automatically managed, cleaned up through the disposable resource handle returned by `effect()` via `onScopeDispose`, preventing memory leaks
-
-### API Reference
-
-#### `useSignalValue`
-
-Bridges `Signal<T>` into a `Readonly ShallowRef<T>`. Automatically tracks `signal` changes and syncs them to the `Vue` reactive system
+Bridges `Signal<T>` into a `Readonly ShallowRef<T>`. Automatically tracks `Signal` changes and syncs them to the `Vue` reactive system
 
 ```ts
 import type { ShallowRef } from 'vue';
@@ -53,9 +45,9 @@ const doubledValue = useSignalValue(doubled);
 </template>
 ```
 
-#### `useSignalState`
+### `useSignalState`
 
-Bridges a writable `Signal<T>` into a `Vue` readonly `ShallowRef<T>`, providing read-write capabilities. Internally integrates `immer` to support mutable-style updates; `immer` is a required `peerDependency`
+Bridges a writable `Signal<T>` into a `Vue` readonly `ShallowRef<T>`, providing read-write capabilities. Internally integrates `immer` to support mutable-style updates
 
 ```ts
 import type { ShallowRef } from 'vue';
@@ -125,19 +117,9 @@ function onToggle(id: number) {
 </template>
 ```
 
-#### `SignalPlugin`
+### `Observer`
 
-Implements a `Vue` plugin. After global registration, the `Observer` component is available globally without per-file imports
-
-```ts
-import type { Plugin as VuePlugin } from 'vue';
-
-export const SignalPlugin: VuePlugin;
-```
-
-#### `Observer`
-
-Renderless `Vue` component that wraps the default slot into a reactive rendering fragment. When `signal` reads inside the slot change, only that fragment re-renders, without affecting the parent component
+Renderless `Vue` component that wraps the default slot into a reactive rendering fragment. When `Signal` reads inside the slot change, only that fragment re-renders, without affecting the parent component
 
 **Usage Example:**
 
@@ -162,6 +144,16 @@ const count = signal(0);
 </template>
 ```
 
+### `SignalPlugin`
+
+Implements a `Vue` plugin. After global registration, the `Observer` component is available globally without per-file imports
+
+```ts
+import type { Plugin as VuePlugin } from 'vue';
+
+export const SignalPlugin: VuePlugin;
+```
+
 **Global plugin registration:**
 
 ```ts
@@ -175,9 +167,9 @@ app.use(SignalPlugin);
 app.mount('#app');
 ```
 
-### Vue Reactive System Integration
+## Vue Reactive System Integration
 
-The `ShallowRef` returned by `useSignalValue` integrates seamlessly with the `Vue` ecosystem:
+The `ShallowRef` returned by `useXXX` integrates seamlessly with the `Vue` ecosystem:
 
 ```ts
 import { watch, computed as vueComputed } from 'vue';
@@ -194,28 +186,3 @@ watch(value, (newVal) => {
 
 const label = vueComputed(() => `Count is ${value.value}`);
 ```
-
-## Canonical Requirements
-
-### Requirement: Vue bridge targets baseline primitives
-
-`@unsignal/vue` SHALL provide its Vue bridge APIs for signals created by `@unsignal/baseline`.
-
-#### Scenario: Vue hooks and components accept baseline signals
-
-- **WHEN** a consumer passes a writable or readonly signal created by `@unsignal/baseline` into `useSignalValue`, `useSignalState`, `Observer`, or `SignalPlugin`-registered flows
-- **THEN** the documented and supported behavior MUST operate on baseline signal primitives
-
-#### Scenario: Vue package guidance points to baseline
-
-- **WHEN** a consumer reads the package README, API examples, or installation instructions
-- **THEN** the package MUST instruct consumers to install and import `@unsignal/baseline` as the primitive provider
-
-### Requirement: Vue bridge preserves non-model behavior during the migration
-
-Replacing the primitive provider SHALL NOT change the documented Vue bridge semantics beyond the package and type source they target.
-
-#### Scenario: Existing Vue bridge semantics stay intact
-
-- **WHEN** a consumer uses the existing `@unsignal/vue` APIs with baseline signals
-- **THEN** signal-to-`ShallowRef` synchronization, component-scope cleanup, and mutable helper behavior MUST remain compatible with the current documented Vue bridge behavior
