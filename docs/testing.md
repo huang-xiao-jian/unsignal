@@ -2,9 +2,7 @@
 
 ## Tech Stack
 
-- Test Tool: `vitest`
-  Test Docs: `https://vitest.dev/llms.txt`
-  Context7 Library Id: `/vitest-dev/vitest`
+- Test Runner: `vitest`
 
 ## Testing Conventions
 
@@ -24,7 +22,7 @@
 ### Test Code Conventions
 
 - `vitest` APIs must be explicitly imported; do not rely on globals
-- `vitest` test case descriptions must be written entirely in English
+- `vitest` test case must be written entirely in English
 
 ```ts
 import { describe, expect, it, rstest } from 'vitest';
@@ -35,8 +33,6 @@ it('should return single point', () => {
 ```
 
 ### Running Tests
-
-`vitest` supports filtering test cases by scope:
 
 ```bash
 # Run specific test cases
