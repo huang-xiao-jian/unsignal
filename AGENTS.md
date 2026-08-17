@@ -49,13 +49,12 @@ The packages and project specs follow the same structure:
     ├── rxjs
     ├── core
     └── baseline
-└── openspec
-    └── specs
-        ├── vue
-        ├── react
-        ├── rxjs
-        ├── core
-        └── baseline
+└── specs
+    ├── vue
+    ├── react
+    ├── rxjs
+    ├── core
+    └── baseline
 ```
 
 ## References
