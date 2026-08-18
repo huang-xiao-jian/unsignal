@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/syncpack/schema.json",
+  "versionGroups": [
+    {
+      "label": "Keep peer dependency ranges intentionally broad",
+      "dependencyTypes": ["peer"],
+      "isIgnored": true
+    }
+  ]
+}

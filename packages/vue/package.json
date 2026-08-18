@@ -33,7 +33,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.9.1",
     "@unsignal/baseline": "workspace:^",
     "@vitejs/plugin-vue-jsx": "^5.1.5",
     "immer": "^11.1.8",
