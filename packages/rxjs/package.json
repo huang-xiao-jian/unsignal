@@ -1,6 +1,6 @@
 {
   "name": "@unsignal/rxjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "RxJS interoperability for the unsignal ecosystem",
   "homepage": "https://github.com/huang-xiao-jian/unsignal#readme",
   "bugs": {
