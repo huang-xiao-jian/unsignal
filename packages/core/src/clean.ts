@@ -11,7 +11,7 @@ export type OnCleanup = (cleanupFn: DisposeFn) => void;
 export class Cleaner {
   private disposers: DisposeFn[] = [];
 
-  cleanup() {
+  cleanup(): void {
     for (const disposer of this.disposers) {
       disposer();
     }

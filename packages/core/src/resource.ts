@@ -22,8 +22,7 @@ export type ResourceLoader<TParams, TValue> = (
 ) => Promise<TValue>;
 
 export type ResourceParams<TParams> =
-  | ReadonlySignal<TParams | undefined>
-  | (() => TParams | undefined);
+  ReadonlySignal<TParams | undefined> | (() => TParams | undefined);
 
 export interface ResourceOptions<TParams, TValue> {
   params: ResourceParams<TParams>;
@@ -79,7 +78,7 @@ export class ResourceTaskAborter implements Aborter {
     this.cleanups = new Set<CleanupFn>();
   }
 
-  public abort() {
+  public abort(): void {
     this.abortController.abort();
 
     for (const cleanup of this.cleanups) {
@@ -89,7 +88,7 @@ export class ResourceTaskAborter implements Aborter {
     this.cleanups.clear();
   }
 
-  public onAbort(cleanupFn: () => void) {
+  public onAbort(cleanupFn: () => void): void {
     this.cleanups.add(cleanupFn);
   }
 }

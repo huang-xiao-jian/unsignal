@@ -287,7 +287,7 @@ class Signal<T = any> {
   /** @internal */
   _unwatched?(this: Signal<T>): void;
 
-  readonly brand = BRAND_SYMBOL;
+  readonly brand: symbol = BRAND_SYMBOL;
 
   constructor(value?: T, options?: SignalOptions<T>) {
     this._value = value;
@@ -553,7 +553,7 @@ class Computed<T = any> extends Signal<T> {
     this._flags = OUTDATED;
   }
 
-  override brand = READONLY_BRAND_SYMBOL;
+  override brand: symbol = READONLY_BRAND_SYMBOL;
 
   override _refresh(): boolean {
     this._flags &= ~NOTIFIED;
@@ -750,8 +750,7 @@ function endEffect(this: Effect, prevContext?: Computed | Effect) {
 }
 
 type EffectFn =
-  | ((this: { dispose: () => void }) => void | (() => void))
-  | (() => void | (() => void));
+  ((this: { dispose: () => void }) => void | (() => void)) | (() => void | (() => void));
 
 type DisposeFn = () => void;
 type Subscription = {

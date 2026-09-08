@@ -1,9 +1,17 @@
 import { effect } from '@unsignal/baseline';
-import { defineComponent, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue';
+import {
+  defineComponent,
+  getCurrentScope,
+  onScopeDispose,
+  ref,
+  type DefineComponent,
+  type Ref,
+  type VNode,
+} from 'vue';
 
-export const Observer = defineComponent({
+export const Observer: DefineComponent = defineComponent({
   name: 'Observer',
-  setup(props, { slots }) {
+  setup(props, { slots }): () => VNode[] | undefined {
     const tick: Ref<number> = ref(0);
 
     const disposable = effect(() => {

@@ -33,17 +33,17 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.4.1",
     "@unsignal/baseline": "workspace:^",
-    "@vitejs/plugin-vue-jsx": "^5.1.5",
-    "immer": "^11.1.8",
-    "jsdom": "^29.1.1",
-    "vue": "^3.5.0"
+    "@vitejs/plugin-vue-jsx": "^5.1.6",
+    "immer": "^11.1.18",
+    "jsdom": "^30.0.1",
+    "vue": "^3.5.42"
   },
   "peerDependencies": {
     "@unsignal/baseline": "workspace:^",
-    "immer": "^11.0.0",
-    "vue": "^3.5.0"
+    "immer": "^11.1.18",
+    "vue": "^3.5.42"
   },
   "publishConfig": {
     "access": "public",

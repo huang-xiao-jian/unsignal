@@ -66,7 +66,7 @@ export class LiteSignalStore implements SignalStore<Symbol> {
     this.deferrer.cancel();
   }
 
-  subscribe = (onStoreChange: StoreChangeCallback) => {
+  subscribe: (onStoreChange: StoreChangeCallback) => () => void = (onStoreChange) => {
     this.subscribers.add(onStoreChange);
 
     return () => {
@@ -74,11 +74,11 @@ export class LiteSignalStore implements SignalStore<Symbol> {
     };
   };
 
-  getSnapshot = () => {
+  getSnapshot: () => Symbol = () => {
     return this.value;
   };
 
-  getServerSnapshot = () => {
+  getServerSnapshot: () => Symbol = () => {
     return this.value;
   };
 }

@@ -41,7 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.4.1",
     "@unsignal/baseline": "workspace:^"
   },
   "peerDependencies": {
