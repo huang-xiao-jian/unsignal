@@ -166,6 +166,9 @@ dist/
 # Turborepo
 .turbo
 
+# Local worktrees
+.worktrees/
+
 # rslib
 .rslib
 
