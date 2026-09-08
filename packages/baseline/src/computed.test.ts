@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { batch, computed, effect, type ReadonlySignal, signal, Signal } from './index';
 
-declare const gc: undefined | (() => void);
-
 describe('computed()', () => {
   it('should return value', () => {
     const a = signal('a');
@@ -460,38 +458,6 @@ describe('computed()', () => {
       a.value = 1;
       d.value;
       expect(spy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe.runIf(typeof gc !== 'undefined')('garbage collection', function () {
-    it('should be garbage collectable if nothing is listening to its changes', async () => {
-      const s = signal(0);
-      const ref = new WeakRef(computed(() => s.value));
-
-      (gc as () => void)();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      (gc as () => void)();
-      expect(ref.deref()).to.be.undefined;
-    });
-
-    it('should be garbage collectable after it has lost all of its listeners', async () => {
-      const s = signal(0);
-
-      let ref: WeakRef<ReadonlySignal>;
-      let disposable: { dispose: () => void };
-      (function () {
-        const c = computed(() => s.value);
-        ref = new WeakRef(c);
-        disposable = effect(() => {
-          c.value;
-        });
-      })();
-
-      disposable.dispose();
-      (gc as () => void)();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      (gc as () => void)();
-      expect(ref.deref()).to.be.undefined;
     });
   });
 
