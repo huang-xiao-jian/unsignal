@@ -14,9 +14,9 @@ Build a TypeScript-first reactive toolkit that brings proven reactive capabiliti
 - Language: `TypeScript v6`
 - Package Manager: `pnpm v11`
 
-## Project Structure
+## Feature Division
 
-The project is **Monorepo**, each package has uniform prefix `@unsignal`.
+Divide the features into multiple packages:
 
 | Package              | Responsibility                                                     |
 | :------------------- | :----------------------------------------------------------------- |
